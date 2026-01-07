@@ -92,7 +92,7 @@ Si el **Stack** es una pila de platos organizada (LIFO: el último en entrar es 
 
 ### ¿Por qué nos importa el Heap en Rainfall?
 
-Aunque en los primeros niveles de Rainfall te centrarás casi siempre en el **Stack** (porque ahí es donde reside el registro **EIP** que queremos controlar), en niveles avanzados podrías encontrar:
+Aunque en los primeros niveles de Rainfall nos centraremos casi siempre en el **Stack** (porque ahí es donde reside el registro **EIP** que queremos controlar), en niveles avanzados podríamos encontrar:
 
 1. **Heap Overflow:** Si sobrescribes datos en el Heap, puedes corromper punteros a funciones o metadatos del gestor de memoria.
 2. **Uso de memoria dinámica:** Si un programa usa `malloc`, los datos estarán allí. A veces, la "llave" para pasar de nivel está guardada en el Heap y no en el Stack.
