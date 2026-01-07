@@ -7,6 +7,14 @@ Esta guía detalla las protecciones de seguridad modernas en sistemas Linux x86 
 
 ## 1. Análisis de Protecciones de Memoria
 
+
+```bash
+checksec --file level0
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
+No RELRO        No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   level0
+
+```
+
 Cuando inicias sesión en un nivel de Rainfall, el banner te muestra el estado de seguridad. Aquí tienes el desglose técnico de cada una:
 
 ### **ASLR (Address Space Layout Randomization)**
