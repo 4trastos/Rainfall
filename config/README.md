@@ -60,6 +60,45 @@ Para moverte por el código desensamblado, estos son tus puntos de referencia:
 4. **Leave**: Limpia el stack frame actual (`mov esp, ebp` y `pop ebp`).
 5. **Ret**: Saca la dirección de retorno de la pila y la mete en el EIP.
 
+### El Mapa del Hardware
+
+* **Registros (CPU):** Son las "celdas de memoria" más rápidas que existen. Están dentro del procesador. El procesador no puede operar directamente sobre la RAM; tiene que traer los datos a los registros, operar con ellos y luego devolverlos (si es necesario).
+* **Stack y Heap (RAM):** Son regiones de la memoria principal. La RAM es mucho más grande que los registros, pero más lenta. El sistema operativo divide la RAM asignada a un programa en diferentes "segmentos".
+
+---
+
+### ¿Qué es el Heap? (El Montículo)
+
+Si el **Stack** es una pila de platos organizada (LIFO: el último en entrar es el primero en salir), el **Heap** es un "gran almacén" de espacio libre.
+
+* **Propósito:** Se usa para la **asignación dinámica de memoria**. Es donde van los datos cuyo tamaño no conocemos antes de ejecutar el programa o que son demasiado grandes para el Stack.
+* **Gestión:** En C, tú controlas el Heap manualmente usando `malloc()`, `calloc()` y liberándolo con `free()`.
+* **Dirección de crecimiento:** Mientras que el **Stack crece hacia abajo** (hacia direcciones de memoria menores), el **Heap crece hacia arriba** (hacia direcciones mayores). Están diseñados para "encontrarse" en el medio del espacio de memoria si se llenan.
+
+---
+
+### Comparativa: Stack vs. Heap
+
+
+| Característica | Stack (Pila) | Heap (Montículo) |
+| --- | --- | --- |
+| **Tipo de asignación** | Automática (por el compilador). | Manual (por el programador). |
+| **Velocidad** | Muy rápida. | Más lenta (requiere gestión del SO). |
+| **Orden** | Estricto (LIFO). | Desordenado (fragmentación). |
+| **Uso común** | Variables locales y direcciones de retorno. | Estructuras grandes, listas enlazadas, objetos. |
+| **Vulnerabilidad** | **Buffer Overflow** (sobrescribir el EIP). | **Heap Overflow / Use After Free** (más complejo). |
+
+---
+
+### ¿Por qué nos importa el Heap en Rainfall?
+
+Aunque en los primeros niveles de Rainfall te centrarás casi siempre en el **Stack** (porque ahí es donde reside el registro **EIP** que queremos controlar), en niveles avanzados podrías encontrar:
+
+1. **Heap Overflow:** Si sobrescribes datos en el Heap, puedes corromper punteros a funciones o metadatos del gestor de memoria.
+2. **Uso de memoria dinámica:** Si un programa usa `malloc`, los datos estarán allí. A veces, la "llave" para pasar de nivel está guardada en el Heap y no en el Stack.
+
+> "El **Stack** es donde vive el **control** (direcciones de retorno), el **Heap** es donde viven los **datos masivos** (contenido dinámico) y los **Registros** son el **motor** que mueve todo."
+
 ---
 
 ## 3. Metodología de Explotación Recomendada
@@ -73,6 +112,7 @@ Para moverte por el código desensamblado, estos son tus puntos de referencia:
 
 
 5. **Craft Payload:** Construir la cadena de ataque y ejecutar.
+
 
 ---
 
