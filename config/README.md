@@ -191,9 +191,8 @@ readelf -l ./level0 | grep -A 1 STACK
 
 ```
 
-* Si ves `RW`, el stack es de lectura/escritura (NX **Disabled**, puedes ejecutar shellcode).
-* Si ves `RWE`, el stack es ejecutable (NX **Disabled**).
-* Si solo ves `RW` y NO hay `E`, el NX está **Enabled**.
+* Si ves `RW`, el stack es de lectura/escritura (NX **Enabled**, No puedes ejecutar código inyectado en el stack. Debes usar técnicas como Ret2Libc.).
+* Si ves `RWE`, el stack es ejecutable (NX **Disabled**) Sí puedes ejecutar código inyectado en el stack (shellcode). Es el escenario más sencillo.
 
 #### B. Para PIE (Position Independent Executable)
 
