@@ -155,3 +155,80 @@ disas main
 ```
 
 Fíjate especialmente si ves funciones como `system`, `execv`, `atoi` o comparaciones (`cmp`).
+
+# AYUDA:
+
+### 1. La Herramienta Maestra: `checksec`
+
+`checksec` es un script (normalmente parte del paquete `pwntools` o instalado de forma independiente) que analiza el archivo ELF y te devuelve exactamente el cuadro que viste, pero con colores.
+
+Si estás en un sistema moderno (como Kali Linux o Ubuntu), puedes usarlo así:
+
+```bash
+checksec --file=/path/to/binary
+
+```
+
+**¿Qué hace por detrás?**
+Revisa las "cabeceras" del binario. Por ejemplo:
+
+* Busca la sección `.stack_prot` para saber si hay **Canaries**.
+* Mira el bit `GNU_STACK` en los segmentos para ver si el **NX** está activo.
+* Comprueba si el tipo de archivo es `EXEC` (No PIE) o `DYN` (PIE enabled).
+
+---
+
+### 2. Cómo verlo manualmente (Si no tienes `checksec`)
+
+Si estás en una máquina restringida (como las de 42 o un servidor antiguo) y no puedes instalar nada, puedes usar las herramientas integradas del sistema para deducir las protecciones:
+
+#### A. Para NX (No-Execute)
+
+Usa `readelf` para buscar la pila:
+
+```bash
+readelf -l ./level0 | grep -A 1 STACK
+
+```
+
+* Si ves `RW`, el stack es de lectura/escritura (NX **Disabled**, puedes ejecutar shellcode).
+* Si ves `RWE`, el stack es ejecutable (NX **Disabled**).
+* Si solo ves `RW` y NO hay `E`, el NX está **Enabled**.
+
+#### B. Para PIE (Position Independent Executable)
+
+```bash
+file ./level0
+
+```
+
+* Si dice `executable`, es **No PIE** (dirección fija).
+* Si dice `shared object`, es **PIE** (dirección aleatoria).
+
+#### C. Para ASLR (A nivel de Sistema Operativo)
+
+El ASLR no depende del binario, sino del Kernel. Puedes ver su estado así:
+
+```bash
+cat /proc/sys/kernel/randomize_va_space
+
+```
+
+* `0`: **Disabled** (como en Rainfall).
+* `1`: Conservador (aleatoriza stack y librerías).
+* `2`: Full (incluye el heap).
+
+---
+
+> ### 🛠️ Comandos de Reconocimiento Rápido
+> 
+> 
+> 1. **`checksec --file=[binario]`**: El método rápido y visual.
+> 2. **`readelf -Wl [binario]`**: Para ver los segmentos del programa y permisos de memoria.
+> 3. **`nm -D [binario]`**: Para ver las funciones dinámicas (si ves `system` o `gets`, ya tienes una pista del ataque).
+> 4. **`ldd [binario]`**: Para ver en qué direcciones se cargan las librerías (si las direcciones cambian al repetir el comando, el ASLR está ON).
+> 
+> 
+
+---
+
