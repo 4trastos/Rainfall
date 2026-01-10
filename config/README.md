@@ -217,6 +217,56 @@ cat /proc/sys/kernel/randomize_va_space
 * `1`: Conservador (aleatoriza stack y librerías).
 * `2`: Full (incluye el heap).
 
+#### D. Para RELRO (Relocation Read-Only)
+
+Usa `readlelf` para un segmento específico llamado GNU_RELRO en los "Program Headers":
+
+```bash
+readelf -l ./level0 | grep RELRO || echo "NO hay RELRO"
+
+```
+
+* NO aparece `GNU_RELRO`: **NO RELRO** La tabla `.got.plt` es totalmente vulnerable y se puede sobrescribir en cualquier momento.
+* `GNU_RELRO`con `Flg R` (ReadOnly):Sería **Partial RELRO** o **Full RELRO**.
+
+#### E. Para RELRO (Relocation Read-Only)
+
+Usa `readlelf` para un segmento específico llamado GNU_RELRO en los "Program Headers":
+
+```bash
+readelf -l ./level0 | grep RELRO || echo "NO hay RELRO"
+
+```
+
+* NO aparece `GNU_RELRO`: **NO RELRO** La tabla `.got.plt` es totalmente vulnerable y se puede sobrescribir en cualquier momento.
+* `GNU_RELRO`con `Flg R` (ReadOnly):Sería **Partial RELRO** o **Full RELRO**.
+
+### E. Análisis de Secciones Críticas (`.plt`, `.got`)
+
+Usa `readelf` para obterne información de las secciones importantes
+
+```bash
+readelf -S ./level0 | grep -E "stack|.got|.plt"
+
+```
+Obtenemos el mapa de cómo el programa gestiona las funciones externas (como `atoi`, `execv`, etc.).
+
+#### ¿Qué significan estos datos?
+
+1. **`.plt` (Procedure Linkage Table):**
+* **Flag `AX` (Alloc/Execute):** Es una sección **ejecutable**.
+* **Función:** Es un "trampolín". Cuando el código llama a `atoi`, no salta directamente a la librería de C. Salta a una entrada en la `.plt`, que luego consulta la dirección real en la `.got`.
+
+
+2. **`.got` (Global Offset Table):**
+* **Flag `WA` (Write/Alloc):** Es una sección de **Escritura**.
+* **Función:** Es una tabla de direcciones. Aquí es donde se guarda la dirección real de memoria de las funciones externas.
+
+
+3. **`.got.plt`:**
+* **Flag `WA` (Write/Alloc):** También es de **Escritura**.
+* **Peligro:** Si esta sección tiene permiso de escritura (`W`), significa que un atacante puede sobrescribir una dirección (por ejemplo, cambiar la dirección de `atoi` por la de `system`) para tomar el control.
+
 ---
 
 > ### 🛠️ Comandos de Reconocimiento Rápido
@@ -230,4 +280,3 @@ cat /proc/sys/kernel/randomize_va_space
 > 
 
 ---
-
