@@ -251,6 +251,14 @@ readelf -S ./level0 | grep -E "stack|.got|.plt"
 ```
 Obtenemos el mapa de cómo el programa gestiona las funciones externas (como `atoi`, `execv`, etc.).
 
+```bash
+[ 3] .rel.plt          REL             08048118 000118 000088 08   A  0   5  4
+[ 5] .plt              PROGBITS        080481d0 0001d0 000110 00  AX  0   0 16
+[24] .got              PROGBITS        080ee0f0 0a50f0 000008 04  WA  0   0  4
+[25] .got.plt          PROGBITS        080ee0f8 0a50f8 000050 04  WA  0   0  4
+
+```
+
 #### ¿Qué significan estos datos?
 
 1. **`.plt` (Procedure Linkage Table):**
