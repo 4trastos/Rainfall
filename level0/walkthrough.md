@@ -54,7 +54,7 @@ level0@RainFall:~$ readelf -S ./level0 | grep -E ".got|.plt"
 | **ASLR** | **OFF** | `0` | Direcciones de memoria estáticas |
 | **NX** | **ENABLED** | `GNU_STACK RW` | Podemos ejecutar código en el Stack |
 | **RELRO** | **NO RELRO** | ` ` | Podemos sobreescribir la `.got` |
-| **CANARY** | ** ? ? ? ** | `error` | Buscar con `gdb` |
+| **CANARY** | **? ? ?**  | `error` | Buscar con `gdb` |
 
 ---
 
