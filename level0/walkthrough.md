@@ -9,7 +9,7 @@ total 732
 ```
 ---
 
-# 2. Analizar las protecciones de la RAM
+# 2. Analizamos las protecciones de la RAM
 
 ### a). PIE:
 ```
