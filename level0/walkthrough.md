@@ -55,6 +55,7 @@ level0@RainFall:~$ readelf -S ./level0 | grep -E ".got|.plt"
 | **NX** | **ENABLED** | `GNU_STACK RW` | Podemos ejecutar código en el Stack |
 | **RELRO** | **NO RELRO** | ` ` | Podemos sobreescribir la `.got` |
 | **CANARY** | **? ? ?**  | `error` | Buscar con `gdb` |
+| **.got.plt** | **WA**  | `WA` | Confirma sección `.got` en escritura |
 
 ---
 
