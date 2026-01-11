@@ -263,7 +263,11 @@ Obtenemos el mapa de cómo el programa gestiona las funciones externas (como `at
 
 #### G. Para detectar el Canary manualmente STACK CANARIES
 
-1. Búsqueda de símbolos (Rápida): `nm ./level0 | grep stack_chk`. busca la función de error que se dispara cuando el canario "muere".
+1. Búsqueda de símbolos (Rápida) y busca la función de error que se dispara cuando el canario "muere": 
+
+```
+nm ./level0 | grep stack_chk`
+```
 
 * **Resultado:** Si aparece `__stack_chk_fail`, el binario tiene protección contra desbordamientos.
 
