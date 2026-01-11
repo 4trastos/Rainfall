@@ -49,7 +49,7 @@ level0@RainFall:~$ readelf -S ./level0 | grep -E ".got|.plt"
 # 3. Resumen del análisis:
 
 | Protección | Estado | Resultado | Consecuencias |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | **PIE** | **NO PIE** | `executable` | Dirección Binario Estática |
 | **ASLR** | **OFF** | `0` | Direcciones de memoria estáticas |
 | **NX** | **ENABLED** | `GNU_STACK RW` | Podemos ejecutar código en el Stack |
