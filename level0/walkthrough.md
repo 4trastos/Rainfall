@@ -89,5 +89,5 @@ level0@RainFall:~$ gdb ./level0
 
 # 6. Analizamos el binario línea por línea:
 
-Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://github.com/4trastos/42-RainFall/blob/main/level0/Ressources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/42-RainFall/blob/main/level0/source.c).  
+Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://github.com/4trastos/Rainfall/blob/main/level0/Resources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/Rainfall/blob/main/level0/source.c).  
 
