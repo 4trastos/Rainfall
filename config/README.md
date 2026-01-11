@@ -229,19 +229,7 @@ readelf -l ./level0 | grep RELRO || echo "NO hay RELRO"
 * NO aparece `GNU_RELRO`: **NO RELRO** La tabla `.got.plt` es totalmente vulnerable y se puede sobrescribir en cualquier momento.
 * `GNU_RELRO`con `Flg R` (ReadOnly):Sería **Partial RELRO** o **Full RELRO**.
 
-#### E. Para RELRO (Relocation Read-Only)
-
-Usa `readlelf` para un segmento específico llamado GNU_RELRO en los "Program Headers":
-
-```bash
-readelf -l ./level0 | grep RELRO || echo "NO hay RELRO"
-
-```
-
-* NO aparece `GNU_RELRO`: **NO RELRO** La tabla `.got.plt` es totalmente vulnerable y se puede sobrescribir en cualquier momento.
-* `GNU_RELRO`con `Flg R` (ReadOnly):Sería **Partial RELRO** o **Full RELRO**.
-
-### E. Análisis de Secciones Críticas (`.plt`, `.got`)
+#### E. Análisis de Secciones Críticas (`.plt`, `.got`)
 
 Usa `readelf` para obterne información de las secciones importantes
 
@@ -259,8 +247,6 @@ Obtenemos el mapa de cómo el programa gestiona las funciones externas (como `at
 
 ```
 
-#### ¿Qué significan estos datos?
-
 1. **`.plt` (Procedure Linkage Table):**
 * **Flag `AX` (Alloc/Execute):** Es una sección **ejecutable**.
 * **Función:** Es un "trampolín". Cuando el código llama a `atoi`, no salta directamente a la librería de C. Salta a una entrada en la `.plt`, que luego consulta la dirección real en la `.got`.
@@ -274,6 +260,39 @@ Obtenemos el mapa de cómo el programa gestiona las funciones externas (como `at
 3. **`.got.plt`:**
 * **Flag `WA` (Write/Alloc):** También es de **Escritura**.
 * **Peligro:** Si esta sección tiene permiso de escritura (`W`), significa que un atacante puede sobrescribir una dirección (por ejemplo, cambiar la dirección de `atoi` por la de `system`) para tomar el control.
+
+#### G. Para detectar el Canary manualmente STACK CANARIES
+
+1. Búsqueda de símbolos (Rápida): `nm ./level0 | grep stack_chk`. busca la función de error que se dispara cuando el canario "muere".
+
+* **Resultado:** Si aparece `__stack_chk_fail`, el binario tiene protección contra desbordamientos.
+
+2. Si `nm ` no funciona, usa `disas main` dentro de `gdb` para buscar el canario dentro del desensamblado:
+
+```bash
+gdb ./level0
+
+(gdb) set disassembly-flavor intel
+(gdb) disas main
+```
+* Lo que debemos buscar:
+
+```
+# AL INICIO (Prólogo de la función):
+0x08048f00:  mov    eax, gs:0x14      ; Lee el valor secreto (Canario) desde el Sistema Operativo
+0x08048f06:  mov    [ebp-0x8], eax    ; Guarda una copia del Canario en el Stack
+
+# ... código de la función ...
+
+# AL FINAL (Epílogo de la función):
+0x08048f40:  mov    eax, [ebp-0x8]    ; Recupera la copia del Canario que guardamos
+0x08048f43:  xor    eax, gs:0x14      ; Compara el valor del Stack con el original de GS
+0x08048f49:  je     0x08048f52        ; Si son iguales (XOR = 0), todo está OK: salta al final
+0x08048f4b:  call   __stack_chk_fail  ; Si NO son iguales, el programa aborta (Ataque detectado)
+
+```
+
+* Si en `disas main` no viste ninguna llamada a `__stack_chk_fail` ni operaciones con `gs:0x14`, entonces **NO hay canario**.
 
 ---
 
