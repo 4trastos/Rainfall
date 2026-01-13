@@ -98,3 +98,39 @@ Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://g
 
 # 6. Solución:
 
+Tras analizar el desensamblado en el punto anterior, identificamos una comparación lógica crítica:
+
+```asm
+0x08048ed9 <+25>:    cmp    eax,0x1a7
+0x08048ede <+30>:    jne    0x8048f58 <main+152>
+
+```
+
+### Análisis del hallazgo:
+
+1. El programa toma nuestro primer argumento (`argv[1]`) y lo convierte a entero mediante `atoi`.
+2. El resultado se almacena en el registro **EAX**.
+3. Se compara **EAX** con el valor hexadecimal **`0x1a7`**.
+4. Convertimos el valor a decimal: `$0x1a7$ = **423**`.
+5. Si el valor coincide, el programa no salta (`jne`) y procede a ejecutar `setresuid` (escalada de privilegios) y `execv` (lanzamiento de shell).
+
+### Ejecución del exploit:
+
+Pasamos el número "mágico" como argumento al binario:
+
+```bash
+level0@RainFall:~$ ./level0 423
+$ whoami
+flag00
+$ getflag
+Check flag.Here is your token : [AQUÍ_IRÁ_TU_TOKEN]
+
+```
+
+---
+
+# 7. Conclusión:
+
+El nivel 0 no requería una explotación de memoria compleja (como Buffer Overflow), sino un ejercicio de **Ingeniería Inversa** para entender la lógica de control del programa. Al identificar la constante esperada, pudimos forzar la ejecución de la "puerta trasera" programada en el binario.
+
+---

@@ -54,40 +54,38 @@ Dump of assembler code for function main:
 End of assembler dump.
 ```
 
-## **SECCIÓN 1: PROLOGUE - PREPARACIÓN DEL STACK FRAME**
+## **SECCIÓN 1: PRÓLOGO - PREPARACIÓN DEL STACK FRAME**
 
 ### **Línea 0: `push ebp`**
 ```
 push ebp
 ```
-- **Acción**: Guarda el valor actual de EBP en la pila (stack)
-- **¿Por qué?**: Cada función tiene su propio "stack frame". EBP apunta al inicio del frame de la función llamadora
-- **Stack después**: `[ebp_antiguo]` en el tope
+- Guarda el valor actual de EBP en la pila (stack). Que es valor de la función (CPU) que llama a la siguinte (main). [ ebp + 0x00]
+- EIP en [ebp + 0x04]. Indica a dónde volver cuando la función termine.
+- Al guardar en el stack el valor del [ebp antoguo] el ESP se mueve 4 bytes hacia abajo
 
 ### **Línea 1: `mov ebp,esp`**
 ```
 mov ebp,esp
 ```
-- **Acción**: Copia ESP (Stack Pointer) a EBP (Base Pointer)
-- **¿Por qué?**: Establece el nuevo "base" para esta función
-- **Resultado**: Ahora EBP apunta al inicio del stack frame de `main()`
+- Copia el nuevo esp (del stack) en ebp para obtener un nuevo registro para la función.
+- Ahora ESP apunta al inicio del "stack frame" de `main`.
 
 ### **Línea 3: `and esp,0xfffffff0`**
 ```
 and esp,0xfffffff0
 ```
-- **Acción**: Aplica operación AND bit a bit entre ESP y 0xfffffff0
-- **¿Por qué?**: Alinea el stack a múltiplo de 16 bytes (alineación requerida por ABI System V)
-- **Matemática**: 0xfffffff0 = 11111111111111111111111111110000 en binario
-- **Efecto**: Los últimos 4 bits de ESP se ponen a 0 (ej: 0xbffff7c9 → 0xbffff7c0)
+- Aplica operación AND bit a bit entre ESP y 0xfffffff0
+- Alinea el stack a múltiplo de 16 bytes (alineación requerida por ABI System V)
+- 0xfffffff0 = 11111111111111111111111111110000 en binario
+- Los últimos 4 bits de ESP se ponen a 0 (ej: 0xbffff7c9 → 0xbffff7c0)
 
 ### **Línea 6: `sub esp,0x20`**
 ```
 sub esp,0x20
 ```
-- **Acción**: Resta 0x20 (32 decimal) de ESP
-- **¿Por qué?**: Reserva espacio para variables locales en el stack
-- **Espacio reservado**: 32 bytes para uso de la función `main()`
+- Reserva espacio para variables locales en el stack
+- 32 bytes para uso de la función `main()`
 
 ---
 
@@ -97,44 +95,44 @@ sub esp,0x20
 ```
 mov eax,DWORD PTR [ebp+0xc]
 ```
-- **Acción**: Carga en EAX el contenido de la dirección `EBP + 0xc` (12 bytes)
+- Carga en EAX el contenido de la dirección `EBP + 0xc` (12 bytes)
 - **Contexto de stack**:
-  - `[ebp+0]`: EBP guardado de la función anterior
+  - `[ebp+0]`: El EBP de la función que llamó a esta. (suelo anterior).
   - `[ebp+4]`: Dirección de retorno (EIP guardado)
-  - `[ebp+8]`: `argc` (contador de argumentos)
-  - `[ebp+0xc]`: `argv` (array de punteros a strings)
-- **Resultado**: `eax = argv` (dirección del array de argumentos)
+  - `[ebp+8]`: `argc` (int argc)
+  - `[ebp+0xc]`: `argv`(char **argv)
+- `eax = argv`
 
 ### **Línea 12: `add eax,0x4`**
 ```
 add eax,0x4
 ```
-- **Acción**: Suma 4 a EAX
-- **¿Por qué?**: En arquitectura 32-bit, los punteros son de 4 bytes
-- **Cálculo**: Si `argv` apunta a `argv[0]`, entonces `argv + 4` apunta a `argv[1]`
-- **Resultado**: `eax = &argv[1]` (dirección del segundo argumento)
+- Suma 4 a EAX
+- En arquitectura 32-bit, los punteros son de 4 bytes
+- Si `argv` apunta a `argv[0]`, entonces `argv + 4` apunta a `argv[1]`
+- `eax = &argv[1]` (segundo argumento: ./level **423**) 
 
 ### **Línea 15: `mov eax,DWORD PTR [eax]`**
 ```
 mov eax,DWORD PTR [eax]
 ```
-- **Acción**: Carga en EAX el contenido de la dirección apuntada por EAX
+- Carga en EAX el contenido de la dirección apuntada por EAX
 - **DWORD PTR**: Indica que estamos accediendo a 4 bytes (un puntero)
-- **Resultado**: `eax = argv[1]` (el string del primer argumento real)
+- `eax = argv[1]` (el string del primer argumento real)
 
 ### **Línea 17: `mov DWORD PTR [esp],eax`**
 ```
 mov DWORD PTR [esp],eax
 ```
-- **Acción**: Guarda EAX en la dirección apuntada por ESP (tope del stack)
-- **¿Por qué?**: Prepara el argumento para la función `atoi()`
-- **Stack ahora**: `[argv[1]]` en el tope
+- Guarda EAX en la dirección apuntada por ESP (tope del stack)
+- Prepara el argumento para la función `atoi()`
+- `[argv[1]]` en el tope
 
 ### **Línea 20: `call 0x8049710 <atoi>`**
 ```
 call 0x8049710 <atoi>
 ```
-- **Acción**: Llama a la función `atoi()` en dirección 0x8049710
+- Llama a la función `atoi()` en dirección 0x8049710
 - **Efectos**:
   1. Guarda EIP actual (dirección de retorno) en el stack
   2. Salta a 0x8049710
@@ -145,17 +143,17 @@ call 0x8049710 <atoi>
 ```
 cmp eax,0x1a7
 ```
-- **Acción**: Compara EAX con 0x1a7 (423 decimal)
+- Compara EAX con 0x1a7 (423 decimal)
 - **Cálculo**: `eax - 0x1a7`, pero sin guardar resultado
-- **Actualiza flags**: ZF (Zero Flag) = 1 si son iguales, 0 si diferentes
+- ZF (Zero Flag) = 1 si son iguales, 0 si diferentes
 
 ### **Línea 30: `jne 0x8048f58 <main+152>`**
 ```
 jne 0x8048f58 <main+152>
 ```
-- **Acción**: Salta a dirección 0x8048f58 si NO son iguales (jne = Jump if Not Equal)
-- **Lógica**: Si `atoi(argv[1]) != 423`, salta al camino de ERROR
-- **Si son iguales**: Continúa con la siguiente instrucción
+- Salta a dirección 0x8048f58 si NO son iguales (jne = Jump if Not Equal)
+- Si `atoi(argv[1]) != 423`, salta al camino de ERROR
+- Continúa con la siguiente instrucción
 
 ---
 
@@ -165,7 +163,7 @@ jne 0x8048f58 <main+152>
 ```
 mov DWORD PTR [esp],0x80c5348
 ```
-- **Acción**: Guarda la constante 0x80c5348 en el tope del stack
+- *Guarda la constante 0x80c5348 en el tope del stack
 - **¿Qué es 0x80c5348?**: Dirección de un string (probablemente "/bin/sh")
 - **Stack ahora**: `[0x80c5348]` en el tope (argumento para strdup)
 
@@ -173,25 +171,25 @@ mov DWORD PTR [esp],0x80c5348
 ```
 call 0x8050bf0 <strdup>
 ```
-- **Acción**: Llama a `strdup()` para duplicar el string
-- **Parámetro**: String en dirección 0x80c5348
-- **Retorno**: EAX = puntero al string duplicado
+- Llama a `strdup()` para duplicar el string
+- String en dirección 0x80c5348
+- EAX = puntero al string duplicado
 
 ### **Línea 44: `mov DWORD PTR [esp+0x10],eax`**
 ```
 mov DWORD PTR [esp+0x10],eax
 ```
-- **Acción**: Guarda el resultado de strdup en `[esp+0x10]`
+- Guarda el resultado de strdup en `[esp+0x10]`
 - **Stack offset**: esp+0x10 = esp + 16 bytes
-- **Propósito**: Guardar el string duplicado como `argv[0]` para execv
+- Guardar el string duplicado como `argv[0]` para execv
 
 ### **Línea 48: `mov DWORD PTR [esp+0x14],0x0`**
 ```
 mov DWORD PTR [esp+0x14],0x0
 ```
-- **Acción**: Guarda 0 (NULL) en `[esp+0x14]`
+- Guarda 0 (NULL) en `[esp+0x14]`
 - **Stack offset**: esp+0x14 = esp + 20 bytes
-- **Propósito**: Terminar el array de argumentos con NULL (`argv[1] = NULL`)
+- Terminar el array de argumentos con NULL (`argv[1] = NULL`)
 
 ---
 
@@ -201,27 +199,27 @@ mov DWORD PTR [esp+0x14],0x0
 ```
 call 0x8054680 <getegid>
 ```
-- **Acción**: Obtiene el GID efectivo (Effective Group ID)
-- **Retorno**: EAX = GID efectivo del proceso
+- Obtiene el GID efectivo (Effective Group ID)
+- EAX = GID efectivo del proceso
 
 ### **Línea 61: `mov DWORD PTR [esp+0x1c],eax`**
 ```
 mov DWORD PTR [esp+0x1c],eax
 ```
-- **Acción**: Guarda el GID en `[esp+0x1c]` (stack+28 bytes)
+- Guarda el GID en `[esp+0x1c]` (stack+28 bytes)
 
 ### **Línea 65: `call 0x8054670 <geteuid>`**
 ```
 call 0x8054670 <geteuid>
 ```
-- **Acción**: Obtiene el UID efectivo (Effective User ID)
-- **Retorno**: EAX = UID efectivo del proceso
+- Obtiene el UID efectivo (Effective User ID)
+- EAX = UID efectivo del proceso
 
 ### **Línea 70: `mov DWORD PTR [esp+0x18],eax`**
 ```
 mov DWORD PTR [esp+0x18],eax
 ```
-- **Acción**: Guarda el UID en `[esp+0x18]` (stack+24 bytes)
+- Guarda el UID en `[esp+0x18]` (stack+24 bytes)
 
 ---
 
@@ -261,40 +259,40 @@ mov DWORD PTR [esp+0x18],eax
 ```
 lea eax,[esp+0x10]
 ```
-- **Acción**: Load Effective Address - Calcula dirección de `[esp+0x10]`
+- Load Effective Address - Calcula dirección de `[esp+0x10]`
 - **LEA vs MOV**: LEA calcula direcciones, MOV mueve datos
-- **Resultado**: `eax = &stack[esp+0x10]` (dirección donde guardamos strdup)
+- `eax = &stack[esp+0x10]` (dirección donde guardamos strdup)
 
 ### **Línea 134: `mov DWORD PTR [esp+0x4],eax`**
 ```
 mov DWORD PTR [esp+0x4],eax
 ```
-- **Acción**: Guarda EAX en `[esp+0x4]`
-- **Propósito**: Segundo argumento para execv = array de argumentos
+- Guarda EAX en `[esp+0x4]`
+- Segundo argumento para execv = array de argumentos
 
 ### **Línea 138: `mov DWORD PTR [esp],0x80c5348`**
 ```
 mov DWORD PTR [esp],0x80c5348
 ```
-- **Acción**: Guarda 0x80c5348 en `[esp]`
-- **Propósito**: Primer argumento para execv = path del programa
+- Guarda 0x80c5348 en `[esp]`
+- Primer argumento para execv = path del programa
 
 ### **Línea 145: `call 0x8054640 <execv>`**
 ```
 call 0x8054640 <execv>
 ```
-- **Acción**: Llama a `execv(path, argv)`
+- Llama a `execv(path, argv)`
 - **Parámetros**: 
   - `path = 0x80c5348` (probablemente "/bin/sh")
   - `argv = [strdup(path), NULL]`
-- **Efecto**: Reemplaza el proceso actual por una shell
+- Reemplaza el proceso actual por una shell
 
 ### **Línea 150: `jmp 0x8048f80 <main+192>`**
 ```
 jmp 0x8048f80 <main+192>
 ```
-- **Acción**: Salto incondicional al final de la función
-- **¿Por qué?**: Si execv tiene éxito, no retorna. Esta línea es por si falla
+- Salto incondicional al final de la función
+- Si execv tiene éxito, no retorna. Esta línea es por si falla
 
 ---
 
@@ -304,7 +302,7 @@ jmp 0x8048f80 <main+192>
 ```
 mov eax,ds:0x80ee170
 ```
-- **Acción**: Carga el contenido de dirección 0x80ee170 en EAX
+- Carga el contenido de dirección 0x80ee170 en EAX
 - **ds:**:
 Prefijo de segmento de datos
 - **¿Qué es 0x80ee170?**: Probablemente `stderr` (FILE*)
@@ -333,18 +331,18 @@ Prefijo de segmento de datos
 ```
 call 0x804a230 <fwrite>
 ```
-- **Acción**: Escribe "Error" en stderr
+- Escribe "Error" en stderr
 
 ---
 
-## **SECCIÓN 8: EPILOGUE - LIMPIEZA Y RETORNO**
+## **SECCIÓN 8: LIMPIEZA Y RETORNO**
 
 ### **Línea 192: `mov eax,0x0`**
 ```
 mov eax,0x0
 ```
-- **Acción**: Pone 0 en EAX
-- **Propósito**: Valor de retorno de la función (0 = éxito)
+- Pone 0 en EAX
+- Valor de retorno de la función (0 = éxito)
 
 ### **Línea 197: `leave`**
 ```
@@ -355,7 +353,7 @@ leave
   mov esp,ebp    ; Restaura ESP
   pop ebp        ; Restaura EBP antiguo
   ```
-- **Propósito**: Deshace el stack frame de la función
+- Deshace el stack frame de la función
 
 ### **Línea 198: `ret`**
 ```
@@ -365,3 +363,37 @@ ret
 - **Fin**: Termina ejecución de `main()`
 
 ---
+
+
+# Bonus A). El Registro EBP/RBP y la Pila
+
+Aclaración técnica: El **registro** EBP (en 32 bits) o RBP (en 64 bits) es una "caja" dentro de la CPU que guarda **una sola dirección de memoria**.
+
+(los bloques -0x4, 0x0, +0x4...) no es el registro en sí, sino la **Memoria RAM (el Stack)** organizada alrededor de la dirección que apunta ese registro.
+
+---
+
+# Bonus B). Mapa del Stack para `ft_test(int x, char c)`
+
+```bash
+
+int ft_test(int x, char c) {
+
+    int j = 0;
+    return = j;
+}
+
+```
+
+En una arquitectura de **32 bits** (como la de *Rainfall*), las cosas se apilan de **4 en 4 bytes**. Así es como se vería la RAM cuando estás dentro de la función:
+
+| Dirección en RAM | Contenido | Explicación |
+| --- | --- | --- |
+| **`[EBP + 0x0c]`** | `char c` | **Argumento 2:** (Ocupa 4 bytes en el stack por alineación). |
+| **`[EBP + 0x08]`** | `int x` | **Argumento 1:** El primer valor enviado. |
+| **`[EBP + 0x04]`** | **Retorno** | **DIRECCIÓN DE RETORNO:** La "nota" para que el EIP sepa volver. |
+| **`[EBP + 0x00]`** | **EBP Viejo** | **El "Suelo" anterior:** El EBP de la función que llamó a esta. |
+| **`[EBP - 0x04]`** | `int j` | **Variable Local:** Tu `int j = 0`. |
+
+---
+
