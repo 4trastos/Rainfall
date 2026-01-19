@@ -7,10 +7,10 @@ Dump of assembler code for function main:
    0x08048483 <+3>:	    and    esp,0xfffffff0
    0x08048486 <+6>:	    sub    esp,0x50
    0x08048489 <+9>:	    lea    eax,[esp+0x10]
-   0x0804848d <+13>:	mov    DWORD PTR [esp],eax
-   0x08048490 <+16>:	call   0x8048340 <gets@plt>
-   0x08048495 <+21>:	leave  
-   0x08048496 <+22>:	ret    
+   0x0804848d <+13>:	  mov    DWORD PTR [esp],eax
+   0x08048490 <+16>:	  call   0x8048340 <gets@plt>
+   0x08048495 <+21>:	  leave  
+   0x08048496 <+22>:	  ret    
 End of assembler dump.
 
 ```
@@ -67,7 +67,7 @@ End of assembler dump.
 0x08048490 <+16>:	call   0x8048340 <gets@plt>
 ```
 - LLama a `get(buffer)` para leer desde `stdin`
-- eax = a lo que ha leido `stdin
+- eax = a lo que ha leido `stdin`
 
 ### **Línea 21: `leave`**
 ```
