@@ -283,8 +283,17 @@ level3@RainFall:~$
 
 ```
 
-# 7. COnclusión:
+----
 
+# 7. Conclusión:
 
+El **Level 2** representa un salto cualitativo en dificultad al introducir una **comprobación de integridad del flujo de ejecución**. A diferencia del nivel anterior, el binario implementa un filtro dinámico que inspecciona la dirección de retorno (`EIP`) antes de permitir la salida de la función `p`.
 
----
+La seguridad se basa en la premisa de que un atacante intentará saltar al **Stack** (direcciones `0xbf...`) para ejecutar su Shellcode. Al aplicar una máscara binaria `0xb0000000`, el programa detecta y aborta cualquier intento de ejecución en esa región de memoria.
+
+Sin embargo, el diseño del programa introduce una vulnerabilidad lógica al utilizar `strdup()`. Esta función replica el input malicioso en el **Heap**, una zona de memoria que:
+
+1. Posee permisos de ejecución (**NX Disabled**).
+2. Utiliza direcciones fuera del rango filtrado (típicamente `0x08...`).
+
+Las protecciones parciales pueden ser evitadas mediante el uso de "trampolines" de memoria o regiones alternativas donde las políticas de seguridad son más laxas.
