@@ -40,7 +40,7 @@ level2@RainFall:~$ readelf -l ./level2 | grep -E "(STACK|RELRO)"
 
 ### d). STACK CANARY:
 ```
-level1@RainFall:~$ nm ./level2 
+level2@RainFall:~$ nm ./level2 
 bash: /usr/bin/nm: Input/output error
 ```
 
