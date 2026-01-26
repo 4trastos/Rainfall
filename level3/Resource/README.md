@@ -155,3 +155,61 @@ End of assembler dump.
 - 1. Copia el contienido de la dirección `0x804988c`. `ds:` Prefijo de segmento de datos.
 - 2. Compara EAX ceon el valor Hexadecimal 64.
 - 3. Si el valos coincide no salta a `0x8048518 <v+116>`.
+
+Aquí tienes la finalización del análisis línea por línea de la función `v`, manteniendo el formato y la estructura que ya has definido:
+
+---
+
+### **Línea 64 a 99: Configuración de `fwrite()**`
+
+```asm
+0x080484e4 <+64>:    mov    eax,ds:0x8049880
+0x080484e9 <+69>:    mov    edx,eax
+0x080484eb <+71>:    mov    eax,0x8048600
+0x080484f0 <+76>:    mov    DWORD PTR [esp+0xc],edx
+0x080484f4 <+80>:    mov    DWORD PTR [esp+0x8],0xc
+0x080484fc <+88>:    mov    DWORD PTR [esp+0x4],0x1
+0x08048504 <+96>:    mov    DWORD PTR [esp],eax
+0x08048507 <+99>:    call   0x80483b0 <fwrite@plt>
+
+```
+
+* **Acción**: Estas líneas preparan los 4 argumentos necesarios para la función `fwrite(ptr, size, nmemb, stream)`.
+* **Argumento 4 (stream)**: Carga el puntero `stdout` desde `0x8049880`.
+* **Argumento 3 (nmemb)**: Se pone a `0xc` (12 en decimal).
+* **Argumento 2 (size)**: Se pone a `0x1`.
+* **Argumento 1 (ptr)**: Carga la dirección `0x8048600` (donde reside el string `"Wait what?!\n"`).
+* **Resultado**: Imprime el mensaje de éxito en la consola si la comparación anterior fue correcta.
+
+### **Línea 104 y 111: El Backdoor - `system("/bin/sh")**`
+
+```asm
+0x0804850c <+104>:   mov    DWORD PTR [esp],0x804860d
+0x08048513 <+111>:   call   0x80483c0 <system@plt>
+
+```
+
+* **Línea 104**: Mueve al tope del stack la dirección `0x804860d`. Esta dirección de memoria contiene el string `"/bin/sh"`.
+* **Línea 111**: Ejecuta la llamada al sistema. Al ser un binario **SUID**, esto nos otorga una shell con los privilegios del propietario del nivel superior.
+
+### **Línea 116 y 117: Epílogo de la Función**
+
+```asm
+0x08048518 <+116>:   leave  
+0x08048519 <+117>:   ret    
+
+```
+
+* **`leave`**: Restaura los registros `ESP` y `EBP` al estado en que estaban antes de entrar en `v`, limpiando el stack frame de 538 bytes.
+* **`ret`**: Saca la dirección de retorno del stack y devuelve el control a `main`.
+
+---
+
+### **Resumen del Flujo de Ataque para el Nivel 3:**
+
+1. **Entrada**: `fgets` limita la lectura, impidiendo un *Buffer Overflow* tradicional.
+2. **Vulnerabilidad**: `printf` recibe nuestro buffer sin un string de formato fijo.
+3. **Explotación**: Usamos el modificador `%n` para escribir en la memoria.
+4. **Target**: Apuntamos a la dirección `0x804988c` (variable `m`).
+5. **Valor**: Debemos imprimir exactamente **64 caracteres** antes del `%n` para que el valor de `m` sea `0x40`.
+6. **Resultado**: El `cmp` resulta positivo, no se ejecuta el `jne`, y el programa nos regala la shell mediante `system`.
