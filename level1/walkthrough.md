@@ -1,6 +1,6 @@
 # 1. Buscar Binario:
 
-Listamos los archivos para que nos muestre el binario del 'level0' y sus permisos. 
+Listamos los archivos para que nos muestre el binario del 'level1' y sus permisos. 
 
 ```
 level1@RainFall:~$ ls -l
