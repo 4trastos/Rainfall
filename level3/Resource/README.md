@@ -1,6 +1,6 @@
-# **ANÁLISIS COMPLETO LINEA POR LINEA - NIVEL level2**
+# **ANÁLISIS COMPLETO LINEA POR LINEA - NIVEL level3**
 
-```
+```asm
 DDump of assembler code for function main:
    0x0804851a <+0>:	push   ebp
    0x0804851b <+1>:	mov    ebp,esp
@@ -15,44 +15,44 @@ End of assembler dump.
 # **SECCIÓN 1: PRÓLOGO - PREPARACIÓN DEL STACK FRAME**
 
 ### **Línea 0: `push   ebp`**
-```
+```asm
 0x0804851a <+0>:	push   ebp
 ```
 - Guarda el valor de EBP (CPU) en lo alto del stack: [ebp + 0x00]. Guarda el suelo anterior para no perderlo.
 - El ESP se mueve 4 bytes hacia abajo.
 
 ### **Línea 1: `mov    ebp,esp` **
-```
+```asm
 0x0804851b <+1>:	mov    ebp,esp
 ```
 - Copia el nuevo ESP el stack para tener un nuevo registro para la función `main`.
 
 ### **Línea 3: `and    esp,0xfffffff0` **
-```
+```asm
 0x0804851d <+3>:	and    esp,0xfffffff0
 ```
 - Alinea el stack a multiplo de 16 bytes.
 - Los últimos 4 bits de ESP se ponen a 0 (ej: 0xbffff7c9 → 0xbffff7c0)
 
 ### **Línea 6: `call   0x80484a4 <v>` **
-```
+```asm
 0x08048520 <+6>:	call   0x80484a4 <v>
 ```
 - LLama a la función `v`.
 
 ### **Línea 11: `leave`**
-```
+```asm
 0x0804854a <+11>:	leave   
 ```
 - **Equivalente a**:
-  ```
-  mov esp,ebp    ; Restaura ESP
-  pop ebp        ; Restaura EBP antiguo
-  ```
+```asm
+mov esp,ebp    ; Restaura ESP
+pop ebp        ; Restaura EBP antiguo
+```
 - Deshace el stack frame de la función
 
 ### **Línea 12: `ret` **
-```
+```asm
 0x0804854b <+12>:	ret 
 ```
 - **Acción**: Return - Saca dirección de retorno del stack y salta allí
@@ -60,7 +60,7 @@ End of assembler dump.
 
 # **SECCIÓN 2: ANALÁSIS DE LA FUNCIÓN `v`**
 
-```
+```asm
 Dump of assembler code for function v:
    0x080484a4 <+0>:	   push   ebp
    0x080484a5 <+1>:	   mov    ebp,esp
@@ -93,26 +93,26 @@ End of assembler dump.
 ```
 
 ### **Línea 0: `push ebp`**
-```
+```asm
 0x080484a4 <+0>:	push   ebp
 ```
 - Guarda en valor de EBP (`main`) en el stack: [ebp + 0x00]. Guarda el suelo paa no perderlo.
 - El ESP se mueve hacia abajo 4 bytes.
 
 ### **Línea 1: `mov    ebp,esp`**
-```
+```asm
 0x080484a5 <+1>:	mov    ebp,esp
 ```
 - Copia el nuevo ESP del stack para tener un nuevo registro para la función `v`.
 
 ### **Línea 3: `sub    esp,0x218`**
-```
+```asm
 0x080484a7 <+3>:	sub    esp,0x218
 ```
 - Reserva 538 bytes (0x218) para el uso de la función `v`.
 
 ### **Línea 9: `mov    eax,ds:0x8049860`**
-```
+```asm
 0x080484ad <+9>:	mov    eax,ds:0x8049860
 ```
 - Copia el contenido de la dirección `0x8049860` en EAX
@@ -121,7 +121,7 @@ End of assembler dump.
 
 ## **Línea 14, 18, 26, 32 y 35: `mov    DWORD PTR [esp+0x8],eax` - `DWORD PTR [esp+0x4],0x200` - `lea    eax,[ebp-0x208]`- `mov    DWORD PTR [esp],eax` - `0x080484c7 <+35>:	   call   0x80483a0 <fgets@plt>]`**
 
-```
+```asm
 0x080484b2 <+14>:	   mov    DWORD PTR [esp+0x8],eax
 0x080484b6 <+18>:	   mov    DWORD PTR [esp+0x4],0x200
 0x080484be <+26>:	   lea    eax,[ebp-0x208]
@@ -135,7 +135,7 @@ End of assembler dump.
 - 5. Llama a la función `fgets()`
 
 ## **Línea 46, 49, 54: `lea    eax,[ebp-0x208]` - `mov    DWORD PTR [esp],eax` - `call   0x8048390 <printf@plt>`**
-```
+```asm
 0x080484cc <+40>:	   lea    eax,[ebp-0x208]
 0x080484d2 <+46>:	   mov    DWORD PTR [esp],eax
 0x080484d5 <+49>:	   call   0x8048390 <printf@plt>
@@ -147,7 +147,7 @@ End of assembler dump.
 **Vulnerabilidad detectada:** Se está llamando a `printf(buffer)` en lugar de `printf("%s", buffer)`. Esto se conoce como **Format String Vulnerability**. No necesitamos "romper" el buffer por tamaño **(buffer overflow)**, sino explotar cómo printf interpreta los datos.
 
 ## **Línea: 54, 59, 60: `mov    eax,ds:0x804988c` - `cmp    eax,0x40` - `jne    0x8048518 <v+116>`**
-```
+```asm
 0x080484da <+54>:	   mov    eax,ds:0x804988c
 0x080484df <+59>:	   cmp    eax,0x40
 0x080484e2 <+62>:	   jne    0x8048518 <v+116>
