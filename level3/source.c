@@ -11,13 +11,14 @@ void    v()
     // lea eax, [ebp-0x208]     -> el buffer empieza 520 bytes antes de EBP
     char buffer[512];
 
-    // 0x080484b6: mov DWORD PTR [esp+0x4], 0x200 (512 bytes)
-    // 0x080484ad: mov eax, ds:0x8049860 (stdin)
+    // mov DWORD PTR [esp+0x4], 0x200 (512 bytes)
+    // mov eax, ds:0x8049860 (stdin)
     fgets(buffer, 512, stdin);
 
     // VULNERABILIDAD CRÍTICA:
-    // 0x080484d5: call printf@plt 
-    // Se pasa el buffer directamente, permitiendo Format String Attack
+    // call printf@plt 
+    // printf sin string de formato
+    // Debería ser: printf("%s", buffer);
     printf(buffer);
 
     // 0x080484da: mov eax, ds:0x804988c (carga el valor de 'm')
@@ -37,6 +38,7 @@ void    v()
 
 int main()
 {
+    // Alineación del stack y llamada a 'v'
     v();
     return (0);
 }

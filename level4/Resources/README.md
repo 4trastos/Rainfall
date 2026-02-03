@@ -145,6 +145,7 @@ End of assembler dump.
 0x080484a0 <+73>: call   0x8048360 <system@plt>
 ```
 - 1. Carga el valor en EAX de una varible global (está en el segmento de datos `.data` o `.bss`)
+**La Variable Global m:** Se define fuera de cualquier función. Esto la sitúa en el segmento de datos (.data o .bss), lo que garantiza que su dirección de memoria (0x08049810) sea fija y no se vea afectada por el ASLR del stack.
 - 2. Compara ese valor con la constante 16930116 (valor en decimal)
 - 3. Si NO son iguales, salta al final y el programa termina.
 - 4. Copia la dirección `0x8048590` al inicio del stack

@@ -124,7 +124,7 @@ Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://g
 
 3. **Objetivo:**
 
-Nuestro objetivo es modificar la que la variable global `m` (la que se comparacon `0x1025544`) reside en `0x08049810` para que valga `0x1025544` (16930116).
+Nuestro objetivo es modificar la variable global `m` (la que se compara con `0x1025544`) reside en `0x08049810` para que valga `0x1025544` (16930116).
 
 4. **Cálculo del Offset:**
 
