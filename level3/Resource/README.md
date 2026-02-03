@@ -96,7 +96,7 @@ End of assembler dump.
 ```asm
 0x080484a4 <+0>:	push   ebp
 ```
-- Guarda en valor de EBP (`main`) en el stack: [ebp + 0x00]. Guarda el suelo paa no perderlo.
+- Guarda el valor de EBP (`main`) en el stack: [ebp + 0x00]. Guarda el suelo paa no perderlo.
 - El ESP se mueve hacia abajo 4 bytes.
 
 ### **Línea 1: `mov    ebp,esp`**

@@ -70,7 +70,7 @@ level3@RainFall:~$ readelf -S ./level3 | grep -E ".got|.plt"
 
 # 4. Fuzzing:
 
-Probamos diferentes maneras de ejecutar el binario hasta lograr romperlo por tamaño de entrada::
+Probamos diferentes maneras de ejecutar el binario hasta lograr romperlo por tamaño de entrada:
 
 ```
 level3@RainFall:~$ (printf 'A%.0s' {1..600};) | ./level3 
@@ -85,7 +85,7 @@ level3@RainFall:~$
 
 Análisis de la función v
 
-```
+```asm
 0x080484b6 <+18>:    mov    DWORD PTR [esp+0x4],0x200    ; Límite de 512 bytes para fgets
 0x080484c7 <+35>:    call   0x80483a0 <fgets@plt>
 ...
@@ -151,7 +151,7 @@ b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
 
 # **7. Conclusión:**
 
-El **Level 3** marca un cambio de paradigma en el taller Rainfall. Mientras que los niveles 0, 1 y 2 se centraban en la corrupción de la memoria mediante el desbordamiento de buffers (*Buffer Overflow*), este nivel introduce la vulnerabilidad de **Cadena de Formato (Format String)**.
+El **Level 3** marca un cambio. Mientras que los niveles 0, 1 y 2 se centraban en la corrupción de la memoria mediante el desbordamiento de buffers (*Buffer Overflow*), este nivel introduce la vulnerabilidad de **Cadena de Formato (Format String)**.
 
 La seguridad del binario se ve comprometida por una implementación incorrecta de la función `printf`. Al pasar el buffer de usuario directamente como primer argumento (`printf(buffer)`) en lugar de usar un especificador de formato (`printf("%s", buffer)`), el programa otorga al atacante la capacidad de interactuar con la pila de forma imprevista.
 
