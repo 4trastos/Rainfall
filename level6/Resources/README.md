@@ -43,7 +43,7 @@ End of assembler dump.
 1. Guarda el valor de EBP (CPU) en lo alto del stack: [ebp + 0x00]. Guarda el suelo para no perderlo y ESP se mueve 4 bytes hacia abajo.
 2. Copia el nuevo ESP del stack en el registro EBP como nuevo para la función `main`
 3. Alinea el stack como multiplo de 16 bytes. (los últimos 4 bytes de ESP se ponen a 0).
-4. Reserva 32 bytes (0x20) Espacio que el compilador reserva en el stack de `main` para organizar la varibales locales y los argumentos de las funciones que va a llamar: `malloc`, `strcpy`, etc.
+4. Reserva (desplaza) 32 bytes (0x20) Espacio que el compilador reserva en el stack de `main` para organizar la varibales locales y los argumentos de las funciones que va a llamar: `malloc`, `strcpy`, etc.
 
 ### **Líneas 9, 16, 21, 25, 32 y 37:**
 ```asm
@@ -54,7 +54,7 @@ End of assembler dump.
 0x0804849c <+32>:	call   0x8048350 <malloc@plt>
 0x080484a1 <+37>:	mov    DWORD PTR [esp+0x18],eax
 ```
-1. Se desplaza el ESP 64 bytes para usarlos con `malloc`.
+1. Se pone el valor `64 (0x40)` en el tope del stack como argumento para la función `malloc`.
 2. llama a la función `malloc` y reserva los 64 bytes de antes para un `buffer` (`char *`).
 3. Guarda el valor de EAX en **[esp+0x1c]** (`buffer = malloc(64)`). Guardado en el `heap`.
 4. Desplaza el ESP 4 bytes para usarlos con el segundo `malloc`
@@ -182,7 +182,7 @@ pop   ebp      ; Restaurar EBP antiguo
 
 ### **Resumen del Flujo de Ataque para el Nivel 6**
 
-1. **Lectura:** 
-2. **Entrada:**
-3. **Vulnerabilidad:**
-4. **Explotación:** 
+1. **Lectura:** El programa reserva dos bloques en el `heap`. El primero en un `buffer` de 64 bytes y el segundo es un puntero que aputa a la función `m()` (que imprime `Nope`).
+2. **Vulnerabilidad:** Se utiliza `strcpy` para copiar argv[1] al primer buffer sin tener en cuenta el tamaño. Esto permite **Heap-based Buffer Overflow**. ¿Por qué el desbordamineto llega al punteero?. En el `heap` cuando se hacen dos malloc seguidos el sistema suele colocarlo uno tras otro.
+3. **Objetivo:** Sobrescribir el contenido del segundo bloque (el puntero de función) para que en el lugar de contener la dirección de `m()` `0x08048468` contenga la dirección de `n()` `0x08048454`.
+4. **Explotación:** Al llegar a al instruciión `call eax` el programa saltará a la función `n()` la cual tiene privilegios de `level7` y ejecutará el comando para leer `.pass`
