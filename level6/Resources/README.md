@@ -115,10 +115,10 @@ level6@RainFall:~$
 2. Mueve 4 bytes en EAX pare apuntar al `argv[1]`.
 3. char *src = argv[1]
 4. edx = src
-5. eax = ptr1 (buffer de 64 bytes)
-6. 2º argumento = src
-7. 1º argumento = dest
-8. Llama a `strcpy`=> **strcpy(ptr1, argv[1])**
+5. eax = buffer (buffer de 64 bytes)
+6. argv[1] = src
+7. buffer = dest
+8. Llama a `strcpy`=> **strcpy(buffer, argv[1])**
 
 **Exploit detectado:** Podemos usar el **Heap-based Buffer Overflow**. Copia el primer argumento del programa (argv[1]) dentro del `buffer` de 64 bytes. No hay límite. `strcpy` copia hasta encontrar un `\0`.
 Si argv[1] tiene más de 64 bytes, desborda el heap.
@@ -130,9 +130,9 @@ Si argv[1] tiene más de 64 bytes, desborda el heap.
 0x080484d0 <+84>:	   call   eax
 ```
 **La llamada a la función**:
-1. eax = ptr2
+1. eax = ptr2 [esp+0x18] => Donde guarda el puntero el segundo malloc
 2. eax = *ptr2 (dirección de función)
-3. llama a donde apunte ptr2
+3. llama a lo que sea que apunte ptr2
 
 **Explotación**: Si logramos sobreescribir `*ptr2` con otra dirección, cuando haga `call eax` no llamará a `m()`, sino a la función que le pongamos.
 
@@ -184,5 +184,5 @@ pop   ebp      ; Restaurar EBP antiguo
 
 1. **Lectura:** El programa reserva dos bloques en el `heap`. El primero en un `buffer` de 64 bytes y el segundo es un puntero que aputa a la función `m()` (que imprime `Nope`).
 2. **Vulnerabilidad:** Se utiliza `strcpy` para copiar argv[1] al primer buffer sin tener en cuenta el tamaño. Esto permite **Heap-based Buffer Overflow**. ¿Por qué el desbordamineto llega al punteero?. En el `heap` cuando se hacen dos malloc seguidos el sistema suele colocarlo uno tras otro.
-3. **Objetivo:** Sobrescribir el contenido del segundo bloque (el puntero de función) para que en el lugar de contener la dirección de `m()` `0x08048468` contenga la dirección de `n()` `0x08048454`.
+3. **Objetivo:** Sobrescribir el contenido del segundo malloc (el puntero de función) para que en el lugar de contener la dirección de `m()` `0x08048468` contenga la dirección de `n()` `0x08048454`.
 4. **Explotación:** Al llegar a al instruciión `call eax` el programa saltará a la función `n()` la cual tiene privilegios de `level7` y ejecutará el comando para leer `.pass`

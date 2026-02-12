@@ -1,6 +1,6 @@
 # 1. Buscar Binario:
 
-Listamos los archivos para que nos muestre el binario del 'level4' y sus permisos. 
+Listamos los archivos para que nos muestre el binario del `level5` y sus permisos. 
 
 ```bash
 level5@RainFall:~$ ls -la
@@ -90,7 +90,7 @@ Análisis de la función `n`
 0x080484ff <+61>:	call   0x80483d0 <exit@plt>     ; Llama a 'exit'
 ```
 
-Para ver con detalle el analisis consuta el archivo  [asm_analysis.md](https://github.com/4trastos/Rainfall/blob/main/level5/Resources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/Rainfall/blob/main/level5/source.c).
+Para ver con detalle el analisis consulta el archivo  [asm_analysis.md](https://github.com/4trastos/Rainfall/blob/main/level5/Resources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/Rainfall/blob/main/level5/source.c).
 
 # 6. Solución: Sobreescribir en el *.got* 
 
