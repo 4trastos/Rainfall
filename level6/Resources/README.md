@@ -65,7 +65,7 @@ End of assembler dump.
 ```asm
 0x080484a5 <+41>:	mov    edx,0x8048468             ; EDX = &m()
 0x080484aa <+46>:	mov    eax,DWORD PTR [esp+0x18]  ; EAX = puntero del heap (segundo malloc)
-0x080484ae <+50>:	mov    DWORD PTR [eax],edx       ; *EAX = &m()
+0x080484ae <+50>:	mov    DWORD PTR [eax],edx       ; *EAX = &m()  *Function Pointer Overwrite*
 ```
 1. Carga la dirección `0x8048468` en EDX: 
 - Vemos que en esa dirección con el comando  `objdump` que está la función `m`. 

