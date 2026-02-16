@@ -43,7 +43,7 @@ End of assembler dump.
 1. Guarda el valor de EBP (CPU) en lo alto del stack: [ebp + 0x00]. Guarda el suelo para no perderlo y ESP se mueve 4 bytes hacia abajo.
 2. Copia el nuevo ESP del stack en el registro EBP como nuevo para la función `main`
 3. Alinea el stack como multiplo de 16 bytes. (los últimos 4 bytes de ESP se ponen a 0).
-4. Reserva (desplaza) 32 bytes (0x20) Espacio que el compilador reserva en el stack de `main` para organizar la varibales locales y los argumentos de las funciones que va a llamar: `malloc`, `strcpy`, etc.
+4. Reserva (desplaza) 32 bytes (0x20). Espacio que el compilador reserva en el stack de `main` para organizar la varibales locales y los argumentos de las funciones que va a llamar: `malloc`, `strcpy`, etc.
 
 ### **Líneas 9, 16, 21, 25, 32 y 37:**
 ```asm
@@ -57,7 +57,7 @@ End of assembler dump.
 1. Se pone el valor `64 (0x40)` en el tope del stack como argumento para la función `malloc`.
 2. llama a la función `malloc` y reserva los 64 bytes de antes para un `buffer` (`char *`).
 3. Guarda el valor de EAX en **[esp+0x1c]** (`buffer = malloc(64)`). Guardado en el `heap`.
-4. Desplaza el ESP 4 bytes para usarlos con el segundo `malloc`
+4. Desplaza el ESP 4 bytes para usarlos como argumento con el segundo `malloc`
 5. Llama a la función `malloc` y reserva espacio para un puntero. Los 4 bytes de antes.
 6. Guarda el puntero en **[esp+0x18]**. Lo guarda en el `heap`.
 
