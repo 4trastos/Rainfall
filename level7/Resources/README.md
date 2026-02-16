@@ -113,8 +113,8 @@ End of assembler dump.
 2.  <+53>: Guarda en EAX [eax+0x4] (los segundos 4 bytes del struct) la dirección de `buffer_01` que estaba en EDX. **Aquí se enlaza el struct con su buffer de datos**.
 3.  <+56>: Pone 8 bytes (0x08) en ESP (stack) para usarlo como argumento del 3º `malloc`
 4.  <+63>: Llama a la función `malloc` y reserva los 8 bytes para `struct_02`
-5.  <+68>: Guarda la dirección del segundo bloque (`struct_02`) en  **[esp+0x18]** del heap.
-6.  <+72>: Actualiza EAX con la dirección de `struct_02`
+5.  <+68>: Guarda la dirección del segundo bloque (`struct_02`) en  **[esp+0x18]** del stack.
+6.  <+72>: Recupera EAX con la dirección de `struct_02`
 7.  <+76>: Asigna el valor 2 al inicio del struct: `struct_02->id = 2`. 
 8.  <+82>: Pone 8 bytes (0x08) en ESP para usarlos como argumento para el 4º `malloc`
 9.  <+89>: Llama a la función `malloc` y reserva 8 bytes (0x08) para el `buffer_02`.
@@ -139,7 +139,7 @@ End of assembler dump.
 2.  <+100>: Guarda en `[eax+0x4]` la dirección del `buffer_02`.
 3.  <+103>: Carga en EAX `char **argv` ([ebp+0xc]).
 4.  <+106>: Suma 4 bytes (0x04) para apuntar a `argv[1]`
-5.  <+109>: Actualiza EAX con la dirección del string de argv[1].
+5.  <+109>: Recupera EAX con la dirección del string de argv[1].
 6.  <+111>: Copia esa dirección string (argv[1]) en EDX. Es el `src` de `strcpy()`.
 7.  <+113>: Recupera en EAX la dirección del `struct_01` [esp+0x1c].
 8.  <+117>: Mueve a EAX el contenido de [eax+0x4]. **IMPORTANET**: EAX ahora contiene la dirección de `buffer_01` (dst).
@@ -164,10 +164,10 @@ End of assembler dump.
 
 1. <+132> al <+140>: Hace los mismo para obtener `argv[2]`.
 2. <+142>: Recupera en EAX la dirección de la `struct_02`.
-3. <+146>: Mueve a EAX el contentenido de [eax+0x4]: **IMPORATANTE**: EAX ahora contine la dirección de `buffer_02` (dst)
+3. <+146>: Mueve a EAX el contentenido de [eax+0x4]: **IMPORTANTE**: EAX ahora contine la dirección de `buffer_02` (dst)
 4. <+149>: Desplaza 4 bytes el stack y pone en [esp+0x4] la dirección de `argv[2]` (src).
 5. <+153>: Pone en lo alto del stack el `dst` que es `buffer_02` (eax)
-6. <+156>: Llama a `strcpy(buffer_01, argv[2])`
+6. <+156>: Llama a `strcpy(buffer_02, argv[2])`
 **(Apertura del archivo):**
 7. <+161>: Carga en EDX la dirección de memoria: `0x80486e9` (string "r").
 8. <+166>: Carga en EAX el valor de la dirección de memoria: `0x80486eb` (dirección de la ruta).
