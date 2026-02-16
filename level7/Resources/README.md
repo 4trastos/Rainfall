@@ -142,7 +142,7 @@ End of assembler dump.
 5.  <+109>: Recupera EAX con la dirección del string de argv[1].
 6.  <+111>: Copia esa dirección string (argv[1]) en EDX. Es el `src` de `strcpy()`.
 7.  <+113>: Recupera en EAX la dirección del `struct_01` [esp+0x1c].
-8.  <+117>: Mueve a EAX el contenido de [eax+0x4]. **IMPORTANET**: EAX ahora contiene la dirección de `buffer_01` (dst).
+8.  <+117>: Carga en EAX el contenido de [eax+0x4]. **IMPORTANET**: EAX ahora contiene la dirección de `buffer_01` (dst).
 9.  <+120>: Desplaza 4 bytes el stack y pone en [esp+0x4] el `src` (edx = `argv[1]`).
 10. <+124>: Pone en lo alto del stack el `dst` (eax = `buffer_01`).
 11. <+127>: Llama a `strcpy(buffer_01, argv[1])`.
@@ -203,13 +203,13 @@ End of assembler dump.
 ```
 
 1. <+183>: Desplaza 8 bytes el stack y almacena en [esp+0x8] el contenido de EAX (El puntero al archivo devuelto por `fopen`) `FILE_pointer`.
-2. <+187>:Desplaza 4 bytes el stack y Pone el tamaño 68 (0x44) en [esp+0x4] -> segundo argumento de `fgets()`.
+2. <+187>:Desplaza 4 bytes el stack y pone 68 (0x44) en [esp+0x4] (buffer global c -> primer y segundo argumento de `fgets()`)
 3. <+195>: Copia en lo alto del stack la dirección `0x8049960` que contiene un string vacio `""`, que es la dirección de destino en `fgets()`:
 ```bash
 (gdb) x/s 0x8049960
 0x8049960 <c>:	 ""
 ```
-4. <+202> Llama a `fgets(0x8049960, 68, FILE_pointer)`. **IMPORTANTE**: El password se guarda en la memoria global 0x8049960.
+4. <+202> Llama a `fgets(c, 68, FILE_pointer)`. **IMPORTANTE**: El password se guarda en la variable global 0x8049960.
 
 ### **Líneas 207, 214 y 219:**
 ```asm

@@ -85,6 +85,7 @@ level6@RainFall:~$ ./level6 asdddddddddddddddddddddddddddddddddddddddddddddddddd
 Segmentation fault (core dumped)
 level6@RainFall:~$ 
 ```
+---
 
 # 5. Reverse Engineering (Target Identification):
 
@@ -99,7 +100,7 @@ level6@RainFall:~$
 0x080484a5 <+41>:	mov    edx,0x8048468                ; Carga la dirección 0x8048468 en EDX
 ```
 
-- Lo que hay en la dirección `0x8048468` es la función `m()`:
+- Vemos que hay en la dirección `0x8048468` es la función `m()`:
 ```bash
 evel6@RainFall:~$ objdump -d ./level6 | grep 8048468
 08048468 <m>:                  ⟸
@@ -141,6 +142,8 @@ evel6@RainFall:~$ objdump -d ./level6 | grep 8048468
 - La función `n()` ejecuta el comando para leer `.pass`.
 
 Para ver con detalle el analisis consulta el archivo  [asm_analysis.md](https://github.com/4trastos/Rainfall/blob/main/level6/Resources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/Rainfall/blob/main/level6/source.c).
+
+---
 
 # 6. Solución: Heap-based Buffer Overflow
 
