@@ -69,7 +69,7 @@ End of assembler dump.
 0x08048527 <+6>:	    sub    esp,0x20
 ```
 
-1. Guardan en lo alto del stack el valor de EBP (CPU): [ebo + 0x00]. Guarda el suelo para no perderlo y ESP se mueve 4 bytes hacia abajo.
+1. Guardan en lo alto del stack el valor de EBP (CPU): [ebp + 0x00]. Guarda el suelo para no perderlo y ESP se mueve 4 bytes hacia abajo.
 2. Copia en EBP el nuevo ESP del stack para la función `main`
 3. Alinea el stack como múltiplo de 16 bytes. (los 4 último byest de ESP se ponen a 0)
 4. Reserva (desplaza) 32 bytes (0x20). Espacio que el compilador reserva en el stack de `main` para organizar las variables locales y los argumentos de las funciones que `main` va a llamar.
