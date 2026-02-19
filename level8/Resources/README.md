@@ -323,7 +323,7 @@ End of assembler dump.
 0x0804863d <+217>:	call   0x8048460 <strcpy@plt>
 ```
 
-1. <+186>: Recupera en EAX el valor de ECX (que tiene el resultado del contador del scas).
+1. <+186>: Recupera en EAX el valor de ECX (que tiene el resultado del contador del `scas`).
 2. <+188> y <+190>: Esto es una operación lógica para convertir el contador de la CPU en un número positivo que nosotros podamos entender. El resultado final en EAX es cuántos caracteres escribimos después de "auth ".
 3. <+190>: Resta un byte(retrocede el puntero)
 4. <+193>: Compara el tamaño de EAX con el núemero 30 (0x1e)
@@ -390,8 +390,221 @@ End of assembler dump.
 0x08048673 <+271>:	call   0x8048420 <free@plt>
 ```
 
-1. Si es `reset` la palabra escrita carga en EAX el puntero de la variable global `auth`:
+1. <+263>: Si es `reset` la palabra escrita carga en EAX el puntero de la variable global `auth`:
 ```bash
 (gdb) x/s 0x8049aac
 0x8049aac <auth>:	 ""
 ```
+2. <+268>: Copia EAX (direccion de la global `auth`) a lo alto del stack.
+3. <+271>: Libera `auth` => `free(auth);`
+
+### **Líneas 276, 280, 282, 287, 292, 294 y 296:**
+```asm
+0x08048678 <+276>:	lea    eax,[esp+0x20]
+0x0804867c <+280>:	mov    edx,eax
+0x0804867e <+282>:	mov    eax,0x8048825
+0x08048683 <+287>:	mov    ecx,0x6
+0x08048688 <+292>:	mov    esi,edx
+0x0804868a <+294>:	mov    edi,eax
+0x0804868c <+296>:	repz cmps BYTE PTR ds:[esi],BYTE PTR es:[edi]
+```
+
+1. <+276>: Recupera en EAX la dirección del `stak_buffer` [esp+0x20]
+2. <+280>: Copia el `stack_buffer` en EDX
+3. <+282>: Actualiza EAX con la dirección `0x8048825` que contiene el string "service".
+```bash
+(gdb) x/s 0x8048825
+0x8048825:	 "service"
+```
+4. <+287>: Pone un 6 en ECX (contador) para contar 6 caracteres.
+5. <+292> y <+294>: Prepara los registros de cadena: ESI apunta a lo que escribimos y EDI apunta a la palabra `"service"`.
+6. <+296>: Compara byte a byte las dos cadenas hasta un máximo de 6.
+
+### **Líneas 298, 301, 304, 306, 308, 310, 313 y 315: ¿Es "service"?**
+```asm
+0x0804868e <+298>:	seta   dl
+0x08048691 <+301>:	setb   al
+0x08048694 <+304>:	mov    ecx,edx
+0x08048696 <+306>:	sub    cl,al
+0x08048698 <+308>:	mov    eax,ecx
+0x0804869a <+310>:	movsx  eax,al
+```
+
+1. <+298> a <+310>: Es lo mismo de antes `(seta, setb, sub)`. Básicamente calcula la diferencia. Si las strings son iguales, EAX terminará siendo 0.
+
+### **Líneas 313 y 315: El Salto del comando service**
+```asm
+0x0804869d <+313>:	test   eax,eax
+0x0804869f <+315>:	jne    0x80486b5 <main+337>
+```
+
+1. Testea si EAX es 0 -> si es `0`se activa `flag = 1`.
+2. `JNE` (Jump if Not Equal). Si no es `service` salta a la linea <+276> (flag = 1). para probar con el siguiente comando ("login").
+
+### **Líneas 317, 321, 324, 327 y 332:**
+```asm
+0x080486a1 <+317>:	lea    eax,[esp+0x20]
+0x080486a5 <+321>:	add    eax,0x7
+0x080486a8 <+324>:	mov    DWORD PTR [esp],eax
+0x080486ab <+327>:	call   0x8048430 <strdup@plt>
+0x080486b0 <+332>:	mov    ds:0x8049ab0,eax
+```
+
+1. <+317>: Recupera en EAX la dirección del `stak_buffer` [esp+0x20]
+2. <+321>: Suma 7 bytes en EAX para saltar la palabra `"service"` y el espacio.
+3. <+324>: Copia ese puntero (lo que escribimos después de "service ") en lo alto del stack.
+4. <+327>: Llama a `strdup()` => `strdup(stack_buffer)`.
+**IMPORTANTE:** `strdup` hace un `malloc` interno del tamaño de la string y copia el contenido ahí.
+5. <+332>: Almacena el valor de strdup(stack_buffer) en la variable goblal `service` (0x8049ab0).
+
+### **Líneas 337, 341, 343, 348, 353, 355 y 357:**
+```asm
+0x080486b5 <+337>:	lea    eax,[esp+0x20]
+0x080486b9 <+341>:	mov    edx,eax
+0x080486bb <+343>:	mov    eax,0x804882d
+0x080486c0 <+348>:	mov    ecx,0x5
+0x080486c5 <+353>:	mov    esi,edx
+0x080486c7 <+355>:	mov    edi,eax
+0x080486c9 <+357>:	repz cmps BYTE PTR ds:[esi],BYTE PTR es:[edi]
+```
+
+1. <+337>: Recupera en EAX la dirección del `stak_buffer` [esp+0x20]
+2. <+341>: Copia el `stack_buffer` en EDX
+3. <+343>: Actualiza EAX con la dirección `0x804882d` que contiene el string "login".
+```bash
+(gdb) x/s 0x804882d
+0x804882d:	 "login"
+```
+4. <+348>: Pone un 5 en ECX (contador) para contar 5 caracteres.
+5. <+353> y <+355>: Prepara los registros de cadena: ESI apunta a lo que escribimos y EDI apunta a la palabra `"login"`.
+6. <+357>: Compara byte a byte las dos cadenas hasta un máximo de 5.
+
+### **Líneas 359, 362, 365, 367, 369 y 371: ¿Es "login"?**
+```asm
+0x080486cb <+359>:	seta   dl
+0x080486ce <+362>:	setb   al
+0x080486d1 <+365>:	mov    ecx,edx
+0x080486d3 <+367>:	sub    cl,al
+0x080486d5 <+369>:	mov    eax,ecx
+0x080486d7 <+371>:	movsx  eax,al
+```
+1. <+359> a <+371>: Es lo mismo de antes `(seta, setb, sub)`. Básicamente calcula la diferencia. Si las strings son iguales, EAX terminará siendo 0.
+
+### **Líneas 374 y 376: El Salto del comando login**
+```asm
+0x080486da <+374>:	test   eax,eax
+0x080486dc <+376>:	jne    0x8048574 <main+16>
+```
+
+1. <+374>: Testea si EAX es 0 -> si es `0`se activa `flag = 1`.
+2. <+376>: `JNE` (Jump if Not Equal). Si no es "login" salta a la linea <+16>  para volver a comenzar el bucle y pedir otro comando.
+
+### **Líneas 382, 387, 390 y 392: La comprobación de "auth"**
+```asm
+0x080486e2 <+382>:	mov    eax,ds:0x8049aac
+0x080486e7 <+387>:	mov    eax,DWORD PTR [eax+0x20]
+0x080486ea <+390>:	test   eax,eax
+0x080486ec <+392>:	je     0x80486ff <main+411>
+```
+
+1. <+382>: Recupera en EAX el valor de la variable global `auth`:
+```bash
+(gdb) x/s 0x8049aac
+0x8049aac <auth>:	 ""
+```
+2. <+387>: Avanza 32 bytes (0x20) desde donde empieza `auth` en el heap.
+3. <+390>: Testea si esos datos son 0. -> si es `0`se activa `flag = 1`.
+4. <+392>: *`JE`* (Jump if Equal). Si el valor en `auth + 32` es 0 salta a la ĺinea <+411> (donde nos dice que nos falta el password). **Si NO es 0, entramos en el system**
+
+### **Líneas 394, 401 y 406:**
+```asm
+0x080486ee <+394>:	mov    DWORD PTR [esp],0x8048833
+0x080486f5 <+401>:	call   0x8048480 <system@plt>
+0x080486fa <+406>:	jmp    0x8048574 <main+16>
+```
+
+1. <+394> Si el valor en auth + 32 era distinto de 0, carga en el stack la dirección (0x8048833) del string `"/bin/sh"`.:
+```bash
+(gdb) x/s 0x8048833
+0x8048833:	 "/bin/sh"
+```
+2. <+401> Llama a la función `system("/bin/sh")`.
+3. <+406> Salta al inicio del bucle.
+
+### **Líneas 411, 416, 418, 423, 427, 435, 445, 446 y 451: El mensaje de error (Fallo de login)**
+```asm
+0x080486ff <+411>:	mov    eax,ds:0x8049aa0
+0x08048704 <+416>:	mov    edx,eax
+0x08048706 <+418>:	mov    eax,0x804883b
+0x0804870b <+423>:	mov    DWORD PTR [esp+0xc],edx
+0x0804870f <+427>:	mov    DWORD PTR [esp+0x8],0xa
+0x08048717 <+435>:	mov    DWORD PTR [esp+0x4],0x1
+0x0804871f <+443>:	mov    DWORD PTR [esp],eax
+0x08048722 <+446>:	call   0x8048450 <fwrite@plt>
+0x08048727 <+451>:	jmp    0x8048574 <main+16>
+```
+
+*Si en auth + 32 había un 0, el programa salta aquí:*
+1. <+411> y <+416>: Carga en EDX lo que hay en 0x8049aa0 (stdout).
+```bash
+(gdb) x/s 0x8049aa0
+0x8049aa0 <stdout@@GLIBC_2.0>:	 ""
+```
+2. <+418>: Carga en EAX la dirección del string 0x804883b:
+```bash
+(gdb) x/s 0x804883b
+0x804883b:	 "Password:\n"
+```
+3. <+423> a <+443>: Prepara los argumentos para fwrite.
+- [esp+0xc]: stdout (donde escribe).
+- [esp+0x8]: 0xa (longitud: 10 bytes).
+- [esp+0x4]: 0x1 (tamaño de cada elemento).
+- [esp]: El mensaje "Password:".
+4. <+446>: Llama a `fwrite()`.
+5. <+451>: Salta de nuevo al inicio del bucle (main+16) para dejarte escribir otro comando.
+
+### **Líneas 456, 457, 462, 465, 466, 467 y 468: (Salida del programa)**
+```asm
+0x0804872c <+456>:	nop
+0x0804872d <+457>:	mov    eax,0x0
+0x08048732 <+462>:	lea    esp,[ebp-0x8]
+0x08048735 <+465>:	pop    esi
+0x08048736 <+466>:	pop    edi
+0x08048737 <+467>:	pop    ebp
+0x08048738 <+468>:	ret    
+```
+*Esto solo ocurre si pulsas `Control + D` (cuando fgets devuelve NULL):*
+1. <+456>: nop (relleno).
+2. <+457>: Pone EAX a 0 (el valor de retorno de main).
+3. <+462> a <+467>: Desmonta el stack. Limpia el espacio que reservamos con `sub esp, 0xa0` y recupera los valores de ESI, EDI y EBP que guardamos al principio.
+4. <+468>: `ret`. Se acaba el programa.
+
+
+### **Resumen del Flujo de Ataque para el Nivel 8**
+
+1. **Lectura:** El programa funciona como un intérprete de comandos en un bucle infinito. Utiliza dos variables globales: `auth` (`0x08049aac`) y `service` (`0x8049ab0`), que son punteros a direcciones en el **Heap**. El programa imprime en cada ciclo las direcciones a las que apuntan estos punteros mediante un `printf("%p, %p \n")`.
+
+2. **Vulnerabilidad:** Existe un **Heap-based Buffer Overflow** y un error de lógica en el manejo de la memoria.
+* Cuando usamos el comando `auth [nombre]`, el programa hace un `malloc(4)` (reserva solo 4 bytes), pero luego utiliza un `strcpy` que permite copiar hasta **30 bytes** (según el chequeo de la línea `<+193>`).
+* Esto nos permite escribir mucho más allá de los 4 bytes reservados, desbordando hacia otros bloques del heap.
+
+3. **Objetivo:** Engañar a la comprobación del comando `login`.
+* En la línea `<+387>`, el programa hace: `mov eax, [eax + 0x20]`.
+* Esto significa que busca un valor en la dirección **`auth + 32 bytes`**. Si lo que hay en esa posición **NO es cero**, el programa llama a `system("/bin/sh")` y nos da la shell.
+
+4. **Estrategia (El Layout del Heap):** - Como vimos en las pruebas, el Heap va asignando bloques de forma consecutiva (normalmente con 16 bytes de diferencia debido a los metadatos en sistemas de 32 bits).
+* Necesitamos que algo escriba un valor distinto de cero justo 32 bytes después de la dirección que tiene `auth`.
+* Podemos usar el comando `service [texto]`, que utiliza `strdup()` para reservar memoria nueva. Si hacemos las reservas adecuadas, el bloque de `service` quedará posicionado en el "punto dulce" que chequea `login`.
+
+5. **Explotación:**
+* **Paso 1:** Ejecutamos `auth ` (con un espacio). Esto inicializa el puntero `auth` con un `malloc(4)`.
+* **Paso 2:** Ejecutamos el comando `service` con una cadena de texto. Al ser el siguiente `malloc` (vía `strdup`), el heap lo colocará justo después.
+* **Paso 3:** Repetimos `service` o usamos una cadena lo suficientemente larga para que la memoria se llene hasta alcanzar la distancia de **32 bytes** desde el inicio de `auth`.
+* **Paso 4:** Ejecutamos `login`. El programa irá a buscar a `auth + 0x20`, encontrará los datos que metimos con `service` (que no son cero), y saltará a la zona de:
+
+```asm
+0x080486f5 <+401>:	call   0x8048480 <system@plt>  ; con "/bin/sh"
+
+```
+
+* **Resultado:** El chequeo de seguridad se da por válido al encontrar datos en el desplazamiento de 32 bytes y se ejecuta la shell con privilegios del siguiente nivel.

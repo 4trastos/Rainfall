@@ -273,7 +273,7 @@ End of assembler dump.
 ```
 
 - Nuestro objetivo es que el segundo `strcpy (argv[2])` guarde ahí la dirección de la función `m() (0x080484f4)`, que es la que sí imprime el password.
-4. **Explotación:**
+5. **Explotación:**
 * **Paso 1:** Usamos `argv[1]` con el tamaño justo de "relleno" para alcanzar el puntero de la `struct_02` y lo sobrescribimos con la dirección de `puts` en la GOT.
 * **Paso 2:** Usamos `argv[2]` para enviarle la dirección de la función `m()`.
 * **Resultado:** Cuando el código llegue a la línea `<+214>`, el programa creerá que está llamando a `puts()`, pero como hemos "hackeao" su dirección en la tabla GOT, saltará a `m()` y nos mostrará el password.

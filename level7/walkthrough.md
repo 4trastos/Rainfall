@@ -216,7 +216,7 @@ OFFSET   TYPE              VALUE
 08049934 R_386_JUMP_SLOT   fopen
 ```
 
-**2. Cálculo del Offset (20 bytes):**
+2. **Cálculo del Offset (20 bytes):**
 Para alcanzar el puntero `buffer` de la `struct_02` desde el inicio de `buffer_01`, debemos saltar:
 
 * **8 bytes**: Espacio de datos de `buffer_01`.
