@@ -291,7 +291,7 @@ End of assembler dump.
 6. <+156>: Recupera en EAX el `stack_buffer` [esp+0x20]
 7. <+160>: Suma 5 bytes para saltarse la palabra `auth`. 
 
-### **Líneas 163, 171, 173, 178, 182 y 184:**
+### **Líneas 163, 171, 173, 178, 182 y 184: (Implntación del compilar de un strlen)**
 ```asm
 0x08048607 <+163>:	mov    DWORD PTR [esp+0x1c],0xffffffff
 0x0804860f <+171>:	mov    edx,eax
@@ -301,4 +301,97 @@ End of assembler dump.
 0x0804861c <+184>:	repnz scas al,BYTE PTR es:[edi]
 ```
 
-1. 
+1. <+163>: Pone 0xffffffff (-1) en el stack. Se usa como contador inicial para ECX.
+2. <+171>: Carga EAX (`stack_buffer`) en EDX
+3. <+173>: Carga un 0 (0x0) al final del string (`stack_buffer`)
+4. <+178>: Carga el puntero del stack [esp+0x1c] en ECX
+5. <+182>: Copia EDX (`stack_buffer`) en el registro EDI
+6. <+184>: Recorre el EDI (`stack_buffer`). `repnz scas` busca el valor 0x00 (el final de la string). Como ECX empezó en -1, al terminar, la diferencia nos dice cuántos caracteres hay.
+
+### **Líneas 186, 188, 190,193, 196, 198, 202, 205, 210, 214 y 217:**
+```asm
+0x0804861e <+186>:	mov    eax,ecx
+0x08048620 <+188>:	not    eax
+0x08048622 <+190>:	sub    eax,0x1
+0x08048625 <+193>:	cmp    eax,0x1e
+0x08048628 <+196>:	ja     0x8048642 <main+222>
+0x0804862a <+198>:	lea    eax,[esp+0x20]
+0x0804862e <+202>:	lea    edx,[eax+0x5]
+0x08048631 <+205>:	mov    eax,ds:0x8049aac
+0x08048636 <+210>:	mov    DWORD PTR [esp+0x4],edx
+0x0804863a <+214>:	mov    DWORD PTR [esp],eax
+0x0804863d <+217>:	call   0x8048460 <strcpy@plt>
+```
+
+1. <+186>: Recupera en EAX el valor de ECX (que tiene el resultado del contador del scas).
+2. <+188> y <+190>: Esto es una operación lógica para convertir el contador de la CPU en un número positivo que nosotros podamos entender. El resultado final en EAX es cuántos caracteres escribimos después de "auth ".
+3. <+190>: Resta un byte(retrocede el puntero)
+4. <+193>: Compara el tamaño de EAX con el núemero 30 (0x1e)
+5. <+196>: `JA` (Jump if Above). Si el texto mide mas de 30 caracteres salta la línea 222 y no hace nada.
+6. <+198>: Si mide 30 o  menos, sigue y carga en EAX la dirección de `stack_buffer` [esp+0x20]
+7. <+202>: Le suma 5 a esa dirección para saltarse la palabra `"auth "` en el string y lo guarda en EDX (este es el **ORIGEN**).
+8. <+205>: Actualiza EAX con el puntero de la variable global `auth`. (la dirección del heap que nos dio **malloc(4)** antes). Este es el **DESTINO**.
+```bash
+(gdb) x/s 0x8049aac
+0x8049aac <auth>:	 ""
+```
+9. <+210> y <+214>: Prepara los argumentos en el stack para la función `strcpy()`:
+- [esp] es el destino.
+- [esp+0x4] es el origen.
+10. <+217>: Llama a la finción `strcpy()`: strcpy([esp], [esp+0x4]).
+**IMPORTANTE**: Va a copiar hasta 30 bytes en un malloc de 4 bytes. **AQUÍ ESTÁ EL: Heap Overflow**
+
+### **Líneas de la 22 hasta la 216.Zona del Segundo Parseo (reset):**
+```asm
+0x08048642 <+222>:	lea    eax,[esp+0x20]
+0x08048646 <+226>:	mov    edx,eax
+0x08048648 <+228>:	mov    eax,0x804881f
+0x0804864d <+233>:	mov    ecx,0x5
+0x08048652 <+238>:	mov    esi,edx
+0x08048654 <+240>:	mov    edi,eax
+0x08048656 <+242>:	repz cmps BYTE PTR ds:[esi],BYTE PTR es:[edi]
+```
+1. <+222>: Vuelve a cargar en EAX la dirección de `stack_buffer` (esp+0x20).
+2. <+226>: Copia esa dirección en EDX
+3. <+228>: Carga en EAX la dirección `0x804881f` que es un string con la palabra: "reset":
+```bash
+(gdb) x/s 0x804881f
+0x804881f:	 "reset"
+``` 
+4. <+233>: Pone un 5 en ECX (el contador). Esta vez va a comparar 5 letras.
+5. <+238> y <+240>: Prepara los registros de cadena: ESI apunta a lo que escribimos y EDI apunta a la palabra `"reset"`.
+6. <+242>: Compara byte a byte nuestro texto con `"reset"` hasta un máximo de 5. 
+
+### **Líneas 244, 247, 250, 252, 254 y 256: ¿Es "reset"?**
+```asm
+0x08048658 <+244>:	seta   dl
+0x0804865b <+247>:	setb   al
+0x0804865e <+250>:	mov    ecx,edx
+0x08048660 <+252>:	sub    cl,al
+0x08048662 <+254>:	mov    eax,ecx
+0x08048664 <+256>:	movsx  eax,al
+```
+
+1. <+244> a <+256>: Es lo mismo de antes `(seta, setb, sub)`. Básicamente calcula la diferencia. Si las strings son iguales, EAX terminará siendo 0.
+
+### **Líneas 259 y 261: El Salto del comando reset**
+```asm
+0x08048667 <+259>:	test   eax,eax
+0x08048669 <+261>:	jne    0x8048678 <main+276>
+```
+
+1. <+259>: Testea si EAX es 0 -> si es `0`se activa `flag = 1`.
+2. <+261>: `JNE` (Jump if Not Equal). Si no es `reset` salta a la linea <+276> (flag = 1). para probar con el siguiente comando ("service").
+
+### **Líneas 263, 268 y 271:**
+```asm
+0x0804866b <+263>:	mov    eax,ds:0x8049aac
+0x08048670 <+268>:	mov    DWORD PTR [esp],eax
+0x08048673 <+271>:	call   0x8048420 <free@plt>
+```
+
+1. Si es `reset` la palabra escrita carga en EAX el puntero de la variable global `auth`:
+```bash
+(gdb) x/s 0x8049aac
+0x8049aac <auth>:	 ""
+```

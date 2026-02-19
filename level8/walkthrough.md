@@ -90,3 +90,12 @@ level8@RainFall:~$
 # 5. Reverse Engineering (Target Identification):
 
 - Desensamblamos el binario:
+
+
+Lo que está pasando en LAS pruebas de consola es que:
+
+auth reserva un trozo de memoria.
+
+service reserva otro trozo de memoria después.
+
+Como auth es un puntero, si logramos escribir suficiente "basura" en el heap o reservar suficientes cosas, podemos hacer que la memoria de service caiga exactamente donde el programa espera encontrar los datos de auth.
