@@ -1,6 +1,6 @@
 # 1. Buscar Binario:
 
-Listamos los archivos para que muestre el binario del `level7` y sus permisos:
+Listamos los archivos para que muestre el binario del `level8` y sus permisos:
 ```bash
 level8@RainFall:~$ ls -la
 total 17
@@ -164,7 +164,7 @@ El programa comprueba una posición de memoria (`auth + 32`) que está fuera de 
 
 `login` no mira si estás logueado; mira si hay "algo" escrito 32 bytes después de donde empieza `auth`.
 
-**2. Cálculo del Offset :**
+2. **Cálculo del Offset :**
 
 * El programa chequea `auth + 32`. Si `auth` está en `0x804a008`, el programa irá a mirar a:
 - `0x804a008 + 0x20 (32) = 0x804a028`
