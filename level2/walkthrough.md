@@ -217,7 +217,7 @@ Analizamos el desamblado de la función `p` e identificamos que hay una comproba
 
 * **Objetivo:** `strdup()` Duplica la cadena introducida en el **Heap**. Dado que el Heap es ejecutable (`NX disabled`) y su dirección (`0x08......`) sobrepasa el filtro `0xb0000000`, este es nuestro punto de entrada.
 
-## **MAPA VISUAL DEL STACK EN `p()**`
+## **MAPA VISUAL DEL STACK EN `p()`**
 
 | Dirección | Contenido | Tamaño |
 | --- | --- | --- |
